@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>DiaCare StayCast · Length-of-stay decision support</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Raleway:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+--bg:#eaf3f0;--card:#fff;--ink:#0f302d;--mute:#5d7a76;--line:#d5e5e1;--t9:#0a3a37;--t7:#14675f;--t5:#2a9d8f;--t1:#d8efe9;--long:#d9822b;--field:#f1f7f5}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0a1514;--card:#112220;--ink:#e3f2ef;--mute:#8fb0ab;--line:#1f3a37;--field:#0d1d1b;--t1:#173a36}}
+:root[data-theme="dark"]{--bg:#0a1514;--card:#112220;--ink:#e3f2ef;--mute:#8fb0ab;--line:#1f3a37;--field:#0d1d1b;--t1:#173a36}
+html{scroll-behavior:smooth;scroll-padding-top:calc(env(safe-area-inset-top,0px) + 76px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font:500 16px/1.55 Raleway,system-ui,sans-serif}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--t9);z-index:30}
+.wrap{max-width:1120px;margin:0 auto;padding:0 20px}
+nav{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;margin:14px auto 0;max-width:1080px;display:flex;align-items:center;gap:6px;padding:8px 10px 8px 22px;border-radius:40px;background:rgba(255,255,255,.14);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.25)}
+nav b{font-size:20px;font-weight:800;color:#fff;margin-right:auto}nav a{color:#e6f5f2;text-decoration:none;font-size:14px;font-weight:600;padding:8px 14px;border-radius:20px}
+nav a:hover{background:rgba(255,255,255,.14)}nav .cta{background:#fff;color:var(--t9);font-weight:700}
+.hero{margin-top:calc(-1*env(safe-area-inset-top,0px) - 66px);padding:calc(env(safe-area-inset-top,0px) + 66px) 0 120px;background:radial-gradient(900px 420px at 80% 10%,#2a9d8f 0,transparent 60%),linear-gradient(160deg,#0a3a37,#14675f);color:#fff;border-radius:0 0 56px 56px;position:relative;overflow:hidden}
+.hero h1{font-size:clamp(34px,6vw,62px);line-height:1.05;font-weight:800;margin:70px 0 18px;max-width:14em;letter-spacing:-.02em}
+.hero p{max-width:34em;color:#cfe9e4;font-size:18px;margin:0 0 28px}
+.pulse{position:absolute;left:0;right:0;bottom:46px;width:100%;height:90px;opacity:.35}
+.btn{display:inline-block;border:0;cursor:pointer;font:700 15px Raleway,sans-serif;padding:13px 26px;border-radius:30px;background:#fff;color:var(--t9);text-decoration:none}
+.btn.dk{background:var(--t7);color:#fff}.btn.ghost{background:transparent;border:1.5px solid var(--t5);color:var(--t7)}
+:focus-visible{outline:3px solid #f6c35c;outline-offset:2px}
+.strip{position:relative;margin:-62px auto 0;max-width:1000px;background:var(--card);border-radius:60px;box-shadow:0 18px 50px rgba(10,58,55,.2);padding:16px 18px 16px 34px;display:flex;flex-wrap:wrap;align-items:center;gap:8px 22px}
+.strip label{display:flex;flex-direction:column;font-size:12px;color:var(--mute);font-weight:600;flex:1;min-width:130px}
+.strip select{border:0;border-bottom:1.5px solid var(--line);background:none;color:var(--ink);font:600 15px Raleway,sans-serif;padding:4px 0}
+.chip{border-radius:30px;padding:12px 22px;font-weight:800;color:#fff;background:var(--t5);min-width:150px;text-align:center}
+.chip.long{background:var(--long)}.chip.mid{background:#6b8b87}
+.mods{background:linear-gradient(180deg,#0a3a37,#0d4a45);color:#fff;margin-top:60px;border-radius:44px;padding:70px 0}
+.mods .wrap{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center}
+.mods h2{font-size:clamp(28px,4vw,42px);line-height:1.15;margin:0 0 14px;font-weight:800}.mods p{color:#b9d9d3;max-width:26em}
+.list a{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:15px 4px;border-bottom:1px solid rgba(255,255,255,.18);color:#9fc4be;text-decoration:none;font-weight:600}
+.list a.on{color:#fff;font-weight:800;font-size:19px;border-bottom:3px solid #fff}
+.list small{font-size:12px;border:1px solid rgba(255,255,255,.3);border-radius:20px;padding:2px 10px}
+.list a.on small{background:#fff;color:var(--t9);border-color:#fff}
+section.app{padding:80px 0 40px}
+h2.t{font-size:clamp(26px,3.5vw,38px);margin:0 0 6px;font-weight:800}.sub{color:var(--mute);margin:0 0 22px}
+.tabs{display:flex;gap:6px;border-bottom:1.5px solid var(--line);margin-bottom:22px;flex-wrap:wrap}
+.tabs button{background:none;border:0;border-bottom:3px solid transparent;font:600 16px Raleway,sans-serif;color:var(--mute);padding:10px 16px;cursor:pointer;margin-bottom:-1.5px}
+.tabs button[aria-selected=true]{color:var(--ink);border-color:var(--t5)}
+.grid{display:grid;grid-template-columns:1.05fr .95fr;gap:22px;align-items:start}
+.card{background:var(--card);border-radius:24px;padding:26px;border:1px solid var(--line)}
+.card h3{margin:0 0 4px;font-size:21px;font-weight:800}
+.seg{display:flex;background:var(--field);border-radius:30px;padding:4px;margin:12px 0 18px}
+.seg button{flex:1;border:0;background:none;color:var(--mute);font:700 14px Raleway,sans-serif;padding:10px;border-radius:26px;cursor:pointer}
+.seg button[aria-pressed=true]{background:var(--t7);color:#fff}
+.f{margin:0 0 16px}.f>div{display:flex;justify-content:space-between;font-weight:700;font-size:15px}.f output{background:var(--field);border-radius:10px;padding:0 12px;min-width:44px;text-align:center}
+.f small{color:var(--mute);font-weight:500}
+input[type=range]{width:100%;accent-color:var(--t5)}
+.ex{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 18px;align-items:center;color:var(--mute);font-size:14px}
+.ex button{border:1px solid var(--line);background:var(--card);color:var(--ink);font:600 14px Raleway,sans-serif;border-radius:24px;padding:9px 18px;cursor:pointer}
+.big{font-size:64px;font-weight:800;line-height:1;margin:10px 0 2px;letter-spacing:-.03em}
+.verdict{font-weight:800;font-size:19px}
+.band{position:relative;height:12px;border-radius:8px;margin:20px 0 6px;background:linear-gradient(90deg,var(--t5) 0 40%,#7b9a96 40% 60%,var(--long) 60%)}
+.band i{position:absolute;top:-5px;width:6px;height:22px;border-radius:4px;background:var(--ink);transform:translateX(-3px);transition:left .35s}
+.scale{display:flex;justify-content:space-between;font-size:12px;color:var(--mute)}
+.why{margin:18px 0 0}.why h4{margin:0 0 8px;font-size:15px}
+.row{display:grid;grid-template-columns:130px 1fr;gap:10px;align-items:center;font-size:13px;margin:6px 0}
+.bar{position:relative;height:10px;background:var(--field);border-radius:6px}.bar::after{content:"";position:absolute;left:50%;top:-2px;bottom:-2px;width:1px;background:var(--mute)}
+.bar span{position:absolute;top:0;height:100%;border-radius:6px}
+.act{background:var(--t1);border-radius:16px;padding:14px 16px;margin-top:18px;font-size:14.5px}
+table{width:100%;border-collapse:collapse;font-size:14.5px}th,td{text-align:left;padding:10px 8px;border-bottom:1px solid var(--line)}th{color:var(--mute);font-weight:600}
+.sum{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px}.sum div{background:var(--field);border-radius:18px;padding:14px 16px}.sum b{display:block;font-size:30px;font-weight:800}.sum span{color:var(--mute);font-size:13px}
+.pill{display:inline-block;border-radius:20px;padding:2px 12px;color:#fff;font-weight:700;font-size:13px;background:var(--t5)}.pill.long{background:var(--long)}.pill.mid{background:#6b8b87}
+.xs{border:0;background:none;color:var(--mute);cursor:pointer;font-size:18px}
+footer{padding:40px 0 60px;color:var(--mute);font-size:14px;text-align:center}
+.hide{display:none!important}
+@media(max-width:820px){.grid,.mods .wrap{grid-template-columns:1fr}nav a:not(.cta){display:none}.strip{border-radius:32px}.hero{border-radius:0 0 34px 34px}.sum{grid-template-columns:1fr}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}.tx{display:flex;flex-direction:column;font-size:13px;font-weight:600;color:var(--mute)}
+.tx input{margin-top:4px;border:1.5px solid var(--line);background:var(--field);color:var(--ink);border-radius:12px;padding:9px 12px;font:600 15px Raleway,sans-serif;min-width:0}
+.dis{margin:6px 0 0;font-weight:700;color:var(--t7)}@media(prefers-color-scheme:dark){.dis{color:var(--t5)}}
+.stack{display:flex;height:16px;border-radius:9px;overflow:hidden}.lg{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:13px;margin-top:8px}.lg i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px}
+.conf{font-size:13px;color:var(--mute);margin:14px 0 0}pre{white-space:pre-wrap;background:var(--field);border-radius:12px;padding:12px;font:500 13px Raleway,sans-serif}
+.occ{display:grid;grid-template-columns:repeat(14,1fr);gap:6px;height:120px;align-items:end;margin-top:6px}.occ div{height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center}
+.occ span{width:100%;background:var(--t5);border-radius:6px 6px 0 0;min-height:2px}.occ em{font-size:11px;color:var(--mute);font-style:normal;margin-top:3px}
+details{margin-top:10px;color:var(--mute);font-size:14px}summary{cursor:pointer;font-weight:700;color:var(--ink)}
+</style></head><body>
+<header class="hero" id="home"><div class="wrap">
+<nav><b>DiaCare</b><a href="#home">Home</a><a href="#modules">Modules</a><a href="#staycast">StayCast</a><a href="#method" data-tab="3">Method</a><a class="cta" href="#staycast">Open StayCast</a></nav>
+<h1>Know how long a patient will stay, before the bed is needed.</h1>
+<p>A clinical decision support workspace for hospital teams. StayCast turns what is known at admission into a clear short-stay or long-stay forecast, so wards can plan beds and staff ahead.</p>
+<a class="btn" href="#staycast">Forecast a stay</a></div>
+<svg class="pulse" viewBox="0 0 1200 90" preserveAspectRatio="none" aria-hidden="true"><path d="M0 50H280l20-34 30 70 26-60 18 24H620l20-30 28 64 24-56 18 22H1200" fill="none" stroke="#fff" stroke-width="2.5"/></svg></header>
+
+<div class="wrap"><div class="strip" role="group" aria-label="Quick forecast">
+<label>Diagnoses recorded<select id="sd"></select></label>
+<label>Procedures<select id="sp"></select></label>
+<label>Treatment change<select id="sc"><option value="0">No change</option><option value="1">Change planned</option></select></label>
+<div class="chip" id="schip" aria-live="polite">–</div></div></div>
+
+<section class="mods" id="modules"><div class="wrap"><div>
+<h2>Six tools for one clinical workspace</h2>
+<p>DiaCare Analytics brings the team’s predictive work together. StayCast, the length-of-stay forecaster, is live. The other five modules are on the way.</p></div>
+<div class="list">
+<a class="on" href="#staycast">StayCast · Length-of-stay forecast<small>Live</small></a>
+<a href="#modules" aria-disabled="true">Module 1<small>Coming soon</small></a>
+<a href="#modules" aria-disabled="true">Module 3<small>Coming soon</small></a>
+<a href="#modules" aria-disabled="true">Module 4<small>Coming soon</small></a>
+<a href="#modules" aria-disabled="true">Module 5<small>Coming soon</small></a>
+<a href="#modules" aria-disabled="true">Module 6<small>Coming soon</small></a></div></div></section>
+
+<section class="app" id="staycast"><div class="wrap">
+<h2 class="t">StayCast</h2><p class="sub">How long is this patient likely to stay? Enter what you know and get the likely stay, the usual range and an expected discharge date.</p>
+<div class="tabs" role="tablist"><button role="tab" aria-selected="true" data-tab="0">One patient</button><button role="tab" aria-selected="false" data-tab="1">Ward planner</button><button role="tab" aria-selected="false" data-tab="2">How to use</button><button role="tab" aria-selected="false" data-tab="3" id="method">About the tool</button></div>
+
+<div data-p="0"><div class="ex">Quick examples: <button data-ex="s">Routine case</button><button data-ex="l">Complex case</button></div>
+<div class="grid"><div class="card"><h3>The patient</h3><span class="sub">Nothing is stored. Everything stays in your browser.</span>
+<div class="two"><label class="tx">Patient or bed<input id="lbl" maxlength="24" placeholder="e.g. Bed 12"></label><label class="tx">Admission date<input type="date" id="adm"></label></div>
+<div class="seg"><button data-mode="adm" aria-pressed="true">At admission</button><button data-mode="aft" aria-pressed="false">Later in the stay</button></div>
+<div class="f"><div><span>Diagnoses recorded</span><output id="od"></output></div><input type="range" id="d" min="1" max="9" aria-label="Diagnoses recorded"><small>Number of diagnoses on the file. 9 or more counts as 9.</small></div>
+<div class="f"><div><span>Procedures</span><output id="op"></output></div><input type="range" id="p" min="0" max="6" aria-label="Procedures"><small>Planned or done, not counting lab tests.</small></div>
+<div class="f"><div><span>Medication change</span></div><div class="seg" style="margin:6px 0 0"><button data-c="0" aria-pressed="true">No change</button><button data-c="1" aria-pressed="false">Changed or adjusted</button></div></div>
+<div class="aft hide"><p class="sub" style="margin:0 0 12px">Adding these makes the estimate more reliable.</p><div class="f"><div><span>Lab tests ordered</span><output id="ol"></output></div><input type="range" id="l" min="1" max="85" aria-label="Lab tests ordered"></div>
+<div class="f"><div><span>Different medications given</span><output id="om"></output></div><input type="range" id="m" min="1" max="44" aria-label="Different medications"></div></div></div>
+<div class="card" aria-live="polite"><h3 id="who">Likely stay</h3><div class="big" id="days"></div><div class="verdict" id="rng"></div>
+<p class="dis" id="dis"></p>
+<div class="why"><h4>Out of 100 similar patients</h4><div class="stack" id="stk"></div><div class="lg" id="lg"></div></div>
+<div class="act" id="act"></div>
+<div class="why"><h4>What affects this estimate</h4><div id="why"></div></div>
+<p class="conf" id="conf"></p>
+<p style="margin:16px 0 0;display:flex;gap:10px;flex-wrap:wrap"><button class="btn dk" id="add">Add to ward planner</button><button class="btn ghost" id="cp">Copy summary</button></p><pre class="hide" id="sm"></pre></div></div></div>
+
+<div data-p="1" class="hide"><div class="card"><h3>Ward planner</h3><span class="sub">Add patients one by one to see how many beds will still be needed as days go by.</span>
+<div class="sum"><div><b id="n">0</b><span>Patients on the ward</span></div><div><b id="el">0</b><span>Still here after day 3</span></div><div><b id="av">0</b><span>Average stay in days</span></div></div>
+<div class="why"><h4>Beds still occupied, by day of stay</h4><div class="occ" id="occ"></div></div>
+<p><button class="btn ghost" id="demo">Load a sample ward</button> <button class="btn ghost" id="clr">Clear</button></p>
+<div style="overflow-x:auto"><table><thead><tr><th>Patient</th><th>Likely stay</th><th>Chance of more than 3 days</th><th>Plan</th><th></th></tr></thead><tbody id="rows"></tbody></table></div></div></div>
+
+<div data-p="2" class="hide"><div class="card"><h3>How to use</h3>
+<p><b>1.</b> Choose the moment. <i>At admission</i> uses only what is known on arrival. <i>Later in the stay</i> also uses the number of lab tests and medications, which makes the estimate better.</p>
+<p><b>2.</b> Move the sliders. The result updates immediately.</p>
+<p><b>3.</b> Read the likely stay and the range. The “100 similar patients” bar shows how stays really turned out for patients with a similar profile.</p>
+<p><b>4.</b> Use <i>Copy summary</i> for the patient note, or <i>Add to ward planner</i> to see bed needs across the ward.</p></div></div>
+
+<div data-p="3" class="hide"><div class="card"><h3>About the tool</h3>
+<p>StayCast learned from 69,970 past hospital stays of patients with diabetes. For each new patient it finds the past patients with the most similar profile and shows how long they stayed. It supports planning and does not replace clinical judgment.</p>
+<table><thead><tr><th>When used</th><th>What it uses</th><th>Short or long call is right</th></tr></thead><tbody>
+<tr><td>At admission</td><td>Diagnoses, procedures, medication change</td><td>about 6 in 10 patients</td></tr>
+<tr><td>Later in the stay</td><td>Also lab tests and medications</td><td>about 7 in 10 patients</td></tr>
+<tr><td>Guessing without the tool</td><td>–</td><td>5 in 10 patients</td></tr></tbody></table>
+<p><b>Use it for planning.</b> Individual stays vary a lot, and the estimate is most useful across a whole ward, where errors balance out. Short means 3 days or fewer, long means more than 3.</p>
+<details><summary>For developers</summary><p>Target: time_in_hospital greater than 3 days. Pipeline: 80/20 split, 99th-percentile capping, log1p on skewed counts, correlation filter above 0.1. Model: AdaBoost, 200 stumps (test accuracy 61.0% at admission, 68.5% later; AUC 0.65 and 0.76), summed per variable into lookup tables, then probability-calibrated. The stay range comes from observed stays in each of ten risk groups. Rebuild with export_model.py.</p></details></div></div>
+</div></section>
+<footer>DiaCare Analytics · Team 3, 4CCE19, ESPRIT · StayCast by Asma Abdellatif<br>Decision support for planning. It is not a diagnosis.</footer>
+
+<script>
+const M={"admission":{"cols":["number_diagnoses","num_procedures","change_bin"],"t":[[-0.6908,-0.6199,-0.6022,-0.4293,-0.1822,-0.1822,-0.146,0.0956,0.2578],[-0.1964,0.0672,0.1964,0.1964,0.1964,0.1964,0.1964],[-0.1128,0.1128]],"off":[1,0,0],"a":1.623,"b":-0.003,"mean":[0.0078,-0.0025,-0.0113],"edges":[0.3098,0.393,0.4134,0.4739,0.4783,0.565,0.5714,0.6343,0.6698],"dist":[[0.262,0.255,0.182,0.119,0.065,0.045,0.024,0.017,0.01,0.007,0.005,0.003,0.004,0.003],[0.219,0.223,0.201,0.131,0.078,0.053,0.035,0.023,0.012,0.008,0.005,0.005,0.004,0.003],[0.18,0.199,0.198,0.15,0.092,0.057,0.043,0.025,0.019,0.014,0.009,0.007,0.004,0.003],[0.205,0.185,0.177,0.125,0.085,0.061,0.049,0.04,0.023,0.015,0.012,0.01,0.008,0.007],[0.147,0.197,0.194,0.142,0.097,0.08,0.049,0.031,0.017,0.016,0.012,0.008,0.005,0.005],[0.123,0.158,0.193,0.146,0.105,0.072,0.059,0.043,0.028,0.023,0.016,0.014,0.011,0.009],[0.109,0.168,0.19,0.15,0.11,0.083,0.06,0.039,0.027,0.022,0.015,0.013,0.008,0.007],[0.091,0.13,0.164,0.132,0.106,0.091,0.077,0.057,0.043,0.03,0.027,0.022,0.016,0.015],[0.067,0.104,0.168,0.139,0.123,0.1,0.084,0.061,0.046,0.032,0.027,0.019,0.022,0.011],[0.048,0.08,0.11,0.12,0.11,0.091,0.093,0.085,0.059,0.057,0.048,0.034,0.033,0.031]],"med":[2,3,3,3,3,4,4,4,5,6],"q1":[1,2,2,2,2,2,2,3,3,4],"q3":[4,4,5,5,5,6,6,7,7,9]},"after":{"cols":["num_medications","num_lab_procedures","number_diagnoses","num_procedures","change_bin"],"t":[[-0.2782,-0.2782,-0.2782,-0.2782,-0.2679,-0.2526,-0.1916,-0.1916,-0.1916,-0.1916,-0.0853,-0.0853,-0.0853,-0.0853,0.1011,0.1011,0.1011,0.1011,0.1011,0.1407,0.1407,0.224,0.224,0.252,0.2907,0.2907,0.3119,0.3119,0.3119,0.3396,0.3957,0.4491,0.4491,0.4491,0.4491,0.5399,0.5873,0.6289,0.6289,0.6289,0.6289,0.6289,0.7242,0.7242],[-0.1712,-0.1712,-0.1712,-0.1712,-0.1712,-0.1712,-0.1712,-0.1712,-0.1712,-0.1712,-0.1712,-0.1712,-0.1712,-0.1712,-0.1712,-0.1712,-0.1712,-0.1712,-0.1712,-0.1712,-0.1712,-0.1712,-0.1446,-0.1446,-0.1446,-0.1446,-0.1446,-0.1446,-0.1446,-0.1446,-0.1446,-0.1446,-0.1446,-0.1446,-0.1446,-0.1446,-0.1446,-0.1446,-0.1446,-0.0627,-0.0627,-0.0627,-0.0627,-0.0627,-0.0627,-0.0627,-0.0627,-0.0627,0.0664,0.0664,0.0664,0.0664,0.0664,0.0664,0.0664,0.0664,0.0664,0.0664,0.0664,0.0963,0.0963,0.1284,0.1284,0.1284,0.1284,0.1284,0.1284,0.1284,0.1284,0.1284,0.1498,0.1498,0.1498,0.1934,0.1934,0.2064,0.2064,0.2064,0.2064,0.2064,0.2064,0.2064,0.2064,0.2064,0.2064],[-0.0559,-0.0559,-0.0559,-0.0559,-0.008,-0.008,-0.008,0.0559,0.0559],[-0.0135,0.0135,0.0135,0.0135,0.0135,0.0135,0.0135],[0,0]],"off":[1,1,1,0,0],"a":3.963,"b":-0.008,"mean":[0.0187,-0.0319,0.0215,0.0016,0.0],"edges":[0.207,0.268,0.3228,0.4148,0.4939,0.5478,0.6401,0.7195,0.8227],"dist":[[0.394,0.274,0.167,0.077,0.036,0.021,0.01,0.008,0.003,0.004,0.003,0.001,0.002,0.001],[0.26,0.267,0.201,0.11,0.062,0.037,0.026,0.014,0.008,0.005,0.004,0.003,0.002,0.001],[0.225,0.253,0.21,0.122,0.068,0.042,0.028,0.022,0.01,0.007,0.004,0.004,0.003,0.002],[0.177,0.234,0.214,0.147,0.082,0.055,0.031,0.018,0.011,0.009,0.008,0.005,0.005,0.004],[0.15,0.198,0.22,0.155,0.096,0.063,0.041,0.031,0.015,0.013,0.007,0.006,0.004,0.004],[0.119,0.167,0.209,0.162,0.106,0.073,0.06,0.035,0.02,0.014,0.012,0.011,0.006,0.006],[0.077,0.144,0.197,0.179,0.13,0.092,0.065,0.037,0.025,0.018,0.013,0.009,0.008,0.006],[0.055,0.11,0.179,0.171,0.129,0.104,0.078,0.054,0.036,0.027,0.02,0.015,0.01,0.01],[0.022,0.069,0.141,0.143,0.143,0.123,0.101,0.075,0.054,0.039,0.03,0.023,0.02,0.017],[0.004,0.017,0.046,0.083,0.11,0.115,0.12,0.114,0.091,0.083,0.07,0.055,0.05,0.042]],"med":[2,2,3,3,3,4,4,4,5,8],"q1":[1,1,2,2,2,2,3,3,4,5],"q3":[3,4,4,4,5,5,6,6,8,10]}};
+const N={number_diagnoses:"Diagnoses recorded",num_procedures:"Procedures",change_bin:"Medication change",num_medications:"Medications given",num_lab_procedures:"Lab tests"};
+const S={mode:"adm",d:7,p:1,c:0,l:43,m:16},$=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+let ward=[];const sum=(a,f,t)=>a.slice(f,t).reduce((x,y)=>x+y,0);
+function pred(s){const k=s.mode=="adm"?M.admission:M.after,v=s.mode=="adm"?[s.d,s.p,s.c]:[s.m,s.l,s.d,s.p,s.c];let d=0,parts=[];
+ v.forEach((x,i)=>{const t=k.t[i],y=t[Math.min(Math.max(x-k.off[i],0),t.length-1)];d+=y;parts.push([N[k.cols[i]],(y-k.mean[i])*k.a])});
+ const p=1/(1+Math.exp(-(k.a*d+k.b)));let g=0;while(g<9&&p>k.edges[g])g++;
+ return{p,parts,dist:k.dist[g],med:k.med[g],q1:k.q1[g],q3:k.q3[g]}}
+const call=p=>p<.4?["short","Plan for a short stay"]:p>=.6?["long","Plan for a long stay"]:["mid","Stay length is uncertain"];
+const ACT={short:"Plan a short-stay bed and start discharge planning early.",long:"Reserve the bed beyond day 3 and involve care coordination and discharge planning early.",mid:"Plan for either outcome. Check again later in the stay, once lab tests and medications are known."};
+const dayw=n=>n+(n==1?" day":" days"),fd=(d,n)=>{const x=new Date(d);x.setDate(x.getDate()+n);return x.toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"})};
+let summary="";
+function render(){const r=pred(S),[c,t]=call(r.p),a=sum(r.dist,0,3),b=sum(r.dist,3,7),z=Math.max(0,1-a-b),pc=Math.round(r.p*100),ad=$("#adm").value||new Date().toISOString().slice(0,10),L=$("#lbl").value.trim();
+ $("#who").textContent=L?"Likely stay for "+L:"Likely stay";
+ $("#days").textContent="About "+dayw(r.med);$("#rng").textContent="Usual range: "+r.q1+" to "+dayw(r.q3);
+ const dd=fd(ad,r.q1)+(r.q1==r.q3?"":" to "+fd(ad,r.q3));$("#dis").textContent="Expected discharge: "+dd;
+ $("#stk").innerHTML=`<span style="width:${a*100}%;background:var(--t5)"></span><span style="width:${b*100}%;background:#6b8b87"></span><span style="width:${z*100}%;background:var(--long)"></span>`;
+ $("#lg").innerHTML=`<span><i style="background:var(--t5)"></i>${Math.round(a*100)} home within 3 days</span><span><i style="background:#6b8b87"></i>${Math.round(b*100)} stay 4 to 7 days</span><span><i style="background:var(--long)"></i>${Math.round(z*100)} stay 8 days or more</span>`;
+ $("#act").innerHTML="<b>"+t+".</b> "+ACT[c];
+ $("#why").innerHTML=r.parts.map(([n,v])=>{const w=Math.min(50,Math.abs(v)/.9*50);return`<div class="row"><span>${n}</span><div class="bar"><span style="${v>=0?"left:50%":"right:50%"};width:${w}%;background:${v>=0?"var(--long)":"var(--t5)"}"></span></div></div>`}).join("")+'<small style="color:var(--mute)">Amber means this adds time compared with a typical patient. Teal means it shortens the stay.</small>';
+ $("#conf").textContent=S.mode=="adm"?"This is a planning estimate made from admission data. Adding lab tests and medications later makes it more reliable.":"This estimate also uses lab tests and medications, so it is more reliable than the one made at admission.";
+ const ch=$("#schip");ch.className="chip "+(c=="long"?"long":c=="mid"?"mid":"");ch.textContent="About "+dayw(r.med);
+ summary=`StayCast${L?" · "+L:""}: likely stay about ${dayw(r.med)} (usual range ${r.q1}-${r.q3} days). Expected discharge ${dd}. Chance of more than 3 days: ${pc}%. ${t}. Planning estimate, not a diagnosis.`;
+ ["d","p","l","m"].forEach(k=>{$("#"+k).value=S[k];$("#o"+k).textContent=S[k]});$("#sd").value=S.d;$("#sp").value=S.p;$("#sc").value=S.c;
+ $$("[data-mode]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.mode==S.mode));$$("[data-c]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.c==S.c));$(".aft").classList.toggle("hide",S.mode!="aft")}
+function wr(){const R=ward.map(pred),el=R.reduce((x,r)=>x+r.p*0+sum(r.dist,3,14),0),av=R.reduce((x,r)=>x+r.dist.reduce((s,q,i)=>s+q*(i+1),0),0)/(R.length||1);
+ $("#n").textContent=ward.length;$("#el").textContent=el.toFixed(1);$("#av").textContent=R.length?av.toFixed(1):"0";
+ const oc=[...Array(14)].map((_,i)=>R.reduce((x,r)=>x+sum(r.dist,i,14),0)),mx=Math.max(1,...oc);
+ $("#occ").innerHTML=oc.map((v,i)=>`<div title="Day ${i+1}: ${v.toFixed(1)} beds"><span style="height:${v/mx*100}%"></span><em>${i+1}</em></div>`).join("");
+ $("#rows").innerHTML=ward.length?ward.map((w,i)=>{const r=R[i],[c,t]=call(r.p);return`<tr><td>${(w.lbl||"Bed "+(i+1)).replace(/</g,"&lt;")}</td><td>About ${dayw(r.med)}</td><td>${Math.round(r.p*100)}%</td><td><span class="pill ${c}">${t.replace("Plan for a ","").replace("Stay length is ","")}</span></td><td><button class="xs" data-rm="${i}" aria-label="Remove">×</button></td></tr>`}).join(""):'<tr><td colspan="5" style="color:var(--mute)">No patients yet. Forecast a patient, then choose Add to ward planner.</td></tr>'}
+for(let i=1;i<=9;i++)$("#sd").add(new Option(i,i));for(let i=0;i<=6;i++)$("#sp").add(new Option(i,i));
+$("#adm").value=new Date().toISOString().slice(0,10);$("#lbl").oninput=$("#adm").oninput=render;
+["d","p","l","m"].forEach(k=>$("#"+k).oninput=e=>{S[k]=+e.target.value;render()});
+$("#sd").onchange=e=>{S.d=+e.target.value;render()};$("#sp").onchange=e=>{S.p=+e.target.value;render()};$("#sc").onchange=e=>{S.c=+e.target.value;render()};
+$$("[data-mode]").forEach(b=>b.onclick=()=>{S.mode=b.dataset.mode;render()});$$("[data-c]").forEach(b=>b.onclick=()=>{S.c=+b.dataset.c;render()});
+$$("[data-ex]").forEach(b=>b.onclick=()=>{Object.assign(S,b.dataset.ex=="s"?{d:5,p:0,c:0,l:25,m:8}:{d:9,p:4,c:1,l:65,m:30});render()});
+$("#add").onclick=()=>{ward.push({...S,lbl:$("#lbl").value.trim()});wr();show(1)};
+$("#cp").onclick=async()=>{const s=$("#sm");s.textContent=summary;try{await navigator.clipboard.writeText(summary);$("#cp").textContent="Copied";setTimeout(()=>$("#cp").textContent="Copy summary",1500)}catch(e){s.classList.remove("hide")}};
+$("#rows").onclick=e=>{const i=e.target.dataset.rm;if(i!=null){ward.splice(i,1);wr()}};$("#clr").onclick=()=>{ward=[];wr()};
+$("#demo").onclick=()=>{ward=[[7,1,0],[9,3,1],[4,0,0],[8,2,1],[6,0,0],[9,5,1],[3,0,0],[7,2,0],[8,1,1],[5,1,0]].map(([d,p,c],i)=>({mode:"adm",d,p,c,l:40,m:15,lbl:"Bed "+(i+1)}));wr()};
+function show(n){$$("[data-p]").forEach(x=>x.classList.toggle("hide",x.dataset.p!=n));$$(".tabs [role=tab]").forEach(b=>b.setAttribute("aria-selected",b.dataset.tab==n))}
+$$(".tabs [role=tab]").forEach(b=>b.onclick=()=>show(b.dataset.tab));$$("nav a[data-tab]").forEach(a=>a.addEventListener("click",()=>show(a.dataset.tab)));
+$$('a[aria-disabled]').forEach(a=>a.onclick=e=>e.preventDefault());
+render();wr();
+</script></body></html>
