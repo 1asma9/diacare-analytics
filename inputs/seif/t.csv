@@ -1,0 +1,3 @@
+id,age_group,time_in_hospital,num_lab_procedures,num_procedures,num_medications,number_outpatient,number_emergency,number_inpatient,number_diagnoses,n_meds_used,n_med_changes,discharge,admission,diag_1,insulin,A1Cresult,change,diabetesMed
+1,8,7,60,2,26,2,2,3,9,3,2,Skilled nursing facility,Emergency,Circulatory,Up,>8,Yes,Yes
+2,5,2,30,1,9,0,0,0,5,1,0,Home,Emergency,Circulatory,No,None,No,No

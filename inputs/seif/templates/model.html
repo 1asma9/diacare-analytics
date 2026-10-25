@@ -1,0 +1,20 @@
+{% extends "base.html" %}{% block title %}About the model - DiaCare Analytics{% endblock %}
+{% block body %}
+<h1>About the model</h1>
+<p class="lead">What it was built on, how well it works, and where it stops being useful.</p>
+<div class="grid g3">
+<div class="card stat"><b>{{(m.recall*100)|round(0)|int}} %</b><span>of early readmissions caught (recall)</span></div>
+<div class="card stat"><b>{{(m.precision*100)|round(0)|int}} %</b><span>of flagged patients really come back (precision)</span></div>
+<div class="card stat"><b>{{m.auc_roc|round(2)}}</b><span>AUC-ROC (0.5 = chance)</span></div></div>
+<div class="card"><h2>What the three risk levels give (on the test set)</h2>
+<table><tr><th>Level</th><th class="n">Share of patients</th><th class="n">Came back within 30 days</th><th class="n">Share of all early readmissions</th></tr>
+{% for k,n in [('high','High'),('elevated','Elevated'),('low','Lower')] %}<tr><td><span class="badge b-{{k}}">{{n}}</span></td><td class="n">{{(m.bands[k].share*100)|round(0)|int}} %</td><td class="n">{{(m.bands[k].rate*100)|round(1)}} %</td><td class="n">{{(m.bands[k].capture*100)|round(0)|int}} %</td></tr>{% endfor %}</table>
+<p class="muted small">The average rate is {{(m.base_rate*100)|round(1)}} %. The high-risk group comes back almost twice as often, the lower-risk group about a third less.</p></div>
+<div class="card"><h2>Models compared in the project</h2><p class="muted small">AUC on the test set, from the notebook.</p>
+<table><tr><th>Model</th><th class="n">AUC-ROC</th><th class="n">AUC-PR</th></tr>
+{% for n,a,b in comparison %}<tr class="{{ 'hl' if loop.first }}"><td>{{n}}</td><td class="n">{{'%.3f'|format(a)}}</td><td class="n">{{'%.3f'|format(b)}}</td></tr>{% endfor %}</table></div>
+<div class="card"><h2>How it works</h2>
+<p>The data: 69,970 first hospital stays of diabetic patients in 130 US hospitals (1999-2008). The target is a readmission within 30 days (9 % of the stays). The model combines a logistic regression, a gradient boosting model and Extra trees (stacking). The platform uses the 18 fields above, the notebook uses up to 152 variables and an ensemble of 8 models (AUC-ROC 0.66).</p>
+<p>The follow-up threshold ({{(thr*100)|round(1)}} %) was chosen on the training data so that about 65 % of the early readmissions are caught.</p></div>
+<div class="note"><b>Limits.</b> The information available at discharge only predicts readmission moderately: every model we tried ends around 0.62-0.66 AUC. Precision is low because only 9 % of patients come back. Data is from 1999-2008 US hospitals and may not match another hospital today. Use the score to rank patients, not to make a decision on one patient.</div>
+{% endblock %}

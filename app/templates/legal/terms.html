@@ -1,0 +1,291 @@
+{% extends "base.html" %}
+
+{% block title %}Terms of Service — DiaCare Analytics{% endblock %}
+
+{% block extra_head %}
+<style>
+  /* ============================================================
+     DiaCare Analytics — Terms of Service (scoped styles: .dc-terms / dc-terms-*)
+     ============================================================ */
+  .dc-terms {
+    --dc-blue: var(--accent-color, #1a5fd8);
+    --dc-navy: #0b2a6f;
+    --dc-mid: #1558d6;
+    --dc-light: #3b8bff;
+    --dc-ink: #0f1f3d;
+    --dc-muted: #64748b;
+    --dc-line: #e3e9f3;
+  }
+
+  /* ---------- Full-page zone ---------- */
+  .dc-terms-main {
+    position: relative;
+    padding: 34px 0 70px;
+    background: linear-gradient(180deg, #f3f8ff 0%, #e3edfc 100%);
+  }
+  .dc-terms-main::before {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background-image: radial-gradient(rgba(21,88,214,.10) 1.4px, transparent 1.4px);
+    background-size: 26px 26px;
+    -webkit-mask-image: linear-gradient(180deg, #000, transparent 70%);
+            mask-image: linear-gradient(180deg, #000, transparent 70%);
+  }
+  .dc-terms-main .container { position: relative; z-index: 2; }
+
+  /* ---------- Split card ---------- */
+  .dc-terms-shell {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    max-width: 1320px;
+    min-height: 78vh;
+    margin: 0 auto;
+    background: #fff;
+    border-radius: 32px;
+    overflow: hidden;
+    overflow: clip;
+    box-shadow: 0 30px 70px -20px rgba(11,42,111,.35), 0 8px 24px rgba(11,42,111,.08);
+  }
+
+  /* Left panel: article menu */
+  .dc-terms-side {
+    position: relative;
+    color: #fff;
+    overflow: hidden;
+    overflow: clip;
+    background: linear-gradient(165deg, var(--dc-navy) 0%, var(--dc-mid) 60%, var(--dc-light) 100%);
+  }
+  .dc-terms-side::before, .dc-terms-side::after {
+    content: ""; position: absolute; border-radius: 50%; pointer-events: none; background: rgba(255,255,255,.08);
+  }
+  .dc-terms-side::before { width: 300px; height: 300px; top: -120px; right: -120px; }
+  .dc-terms-side::after  { width: 240px; height: 240px; bottom: -90px; left: -80px; background: rgba(255,255,255,.06); }
+  .dc-terms-side-inner {
+    position: sticky; top: 100px; z-index: 2;
+    padding: 44px 28px 40px;
+  }
+  .dc-terms-side-logo {
+    width: 60px; height: 60px; border-radius: 18px; margin-bottom: 20px; font-size: 1.9rem;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: rgba(255,255,255,.16); border: 1px solid rgba(255,255,255,.3);
+    animation: dcTermsFloat 4.5s ease-in-out infinite;
+  }
+  .dc-terms-side h2 { margin: 0 0 4px; font-family: "Montserrat", sans-serif; font-weight: 800; font-size: 1.3rem; color: #fff; }
+  .dc-terms-side-sub { margin: 0 0 28px; font-size: .86rem; color: rgba(255,255,255,.78); }
+
+  .dc-terms-nav { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+  .dc-terms-nav a {
+    display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 12px;
+    color: rgba(255,255,255,.85); font-size: .93rem; font-weight: 600; text-decoration: none;
+    border-left: 3px solid transparent; transition: all .25s ease;
+  }
+  .dc-terms-nav a i { font-size: 1rem; opacity: .85; transition: transform .25s ease; }
+  .dc-terms-nav a:hover { background: rgba(255,255,255,.12); color: #fff; }
+  .dc-terms-nav a:hover i { transform: translateX(3px); }
+  .dc-terms-nav a.active {
+    background: rgba(255,255,255,.95); color: var(--dc-navy); border-left-color: #7fe0ff;
+    box-shadow: 0 12px 22px -12px rgba(0,0,0,.5);
+  }
+  .dc-terms-nav a.active i { color: var(--dc-mid); opacity: 1; }
+
+  /* Right panel: content */
+  .dc-terms-body { padding: 48px 56px 46px; background: #fff; }
+  .dc-terms-head { text-align: center; margin-bottom: 44px; }
+  .dc-terms-pill {
+    display: inline-flex; align-items: center; gap: 8px; padding: 7px 16px; margin-bottom: 16px;
+    border-radius: 999px; background: #e8f0ff; color: var(--dc-blue); font-weight: 700; font-size: .85rem;
+  }
+  .dc-terms-pill i { animation: dcTermsBeat 2.2s ease-in-out infinite; }
+  .dc-terms-head h1 {
+    margin: 0; font-family: "Montserrat", sans-serif; font-weight: 800;
+    font-size: clamp(1.8rem, 3vw, 2.4rem); color: var(--dc-ink);
+  }
+  .dc-terms-head .bar {
+    display: block; width: 70px; height: 4px; margin: 14px auto 16px; border-radius: 4px;
+    background: linear-gradient(90deg, var(--dc-mid), var(--dc-light));
+  }
+  .dc-terms-head p { margin: 0 auto; max-width: 620px; color: var(--dc-muted); font-size: 1rem; line-height: 1.7; }
+
+  /* Article cards */
+  .dc-terms-art {
+    --c: var(--dc-mid);
+    position: relative; margin: 0 0 46px; padding: 46px 32px 28px; background: #fff; border-radius: 22px;
+    border: 1px solid var(--dc-line); scroll-margin-top: 110px;
+    box-shadow: 0 16px 34px -22px rgba(11,42,111,.4);
+    transition: transform .3s ease, box-shadow .3s ease, border-color .3s ease;
+  }
+  .dc-terms-art:last-child { margin-bottom: 0; }
+  .dc-terms-art::before {
+    content: ""; position: absolute; left: 32px; right: 32px; top: 0; height: 4px; border-radius: 0 0 6px 6px; background: var(--c);
+  }
+  .dc-terms-art:hover {
+    transform: translateY(-5px);
+    border-color: color-mix(in srgb, var(--c), #fff 60%);
+    box-shadow: 0 28px 44px -22px rgba(11,42,111,.5);
+  }
+  .dc-terms-art-ico {
+    position: absolute; top: -28px; left: 50%; transform: translateX(-50%);
+    width: 58px; height: 58px; border-radius: 18px; border: 4px solid #fff;
+    display: inline-flex; align-items: center; justify-content: center; font-size: 1.6rem; color: #fff;
+    background: linear-gradient(135deg, var(--c), color-mix(in srgb, var(--c), #fff 35%));
+    box-shadow: 0 14px 22px -10px var(--c); transition: transform .3s ease;
+  }
+  .dc-terms-art:hover .dc-terms-art-ico { transform: translateX(-50%) rotate(-8deg) scale(1.08); }
+  .dc-terms-art h3 {
+    margin: 0 0 12px; text-align: center; font-family: "Montserrat", sans-serif; font-weight: 800; font-size: 1.25rem; color: var(--dc-ink);
+  }
+  .dc-terms-art h3 .num { color: var(--c); }
+  .dc-terms-art p { margin: 0 0 12px; font-size: .97rem; line-height: 1.75; color: #556274; }
+  .dc-terms-art p strong, .dc-terms-art li strong { color: var(--dc-ink); }
+  .dc-terms-art ul { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+  .dc-terms-art li {
+    position: relative; padding: 12px 14px 12px 44px; border-radius: 14px; font-size: .95rem; line-height: 1.65; color: #556274;
+    background: #f4f7fc; border: 1px solid var(--dc-line);
+  }
+  .dc-terms-art li::before {
+    content: "\F26E"; font-family: "bootstrap-icons"; position: absolute; left: 14px; top: 12px; font-size: 1.1rem; color: var(--c);
+  }
+
+  /* ---------- Animations ---------- */
+  @keyframes dcTermsBeat { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.22); } }
+  @keyframes dcTermsFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+  @media (prefers-reduced-motion: reduce) {
+    .dc-terms-pill i, .dc-terms-side-logo { animation: none !important; }
+    .dc-terms * { transition: none !important; }
+  }
+
+  /* ---------- Responsive ---------- */
+  @media (max-width: 991.98px) {
+    .dc-terms-shell { grid-template-columns: 1fr; min-height: 0; }
+    .dc-terms-side-inner { position: static; padding: 24px 20px 20px; }
+    .dc-terms-side-logo, .dc-terms-side-sub { display: none; }
+    .dc-terms-side h2 { margin-bottom: 14px; }
+    .dc-terms-nav { flex-direction: row; overflow-x: auto; padding-bottom: 6px; gap: 8px; }
+    .dc-terms-nav a { white-space: nowrap; padding: 9px 14px; border-left: 0; }
+    .dc-terms-body { padding: 36px 24px 30px; }
+  }
+  @media (max-width: 575.98px) {
+    .dc-terms-main { padding: 20px 0 50px; }
+    .dc-terms-shell { border-radius: 22px; }
+    .dc-terms-body { padding: 30px 16px 24px; }
+    .dc-terms-art { padding: 44px 18px 22px; }
+    .dc-terms-art::before { left: 18px; right: 18px; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dc-terms">
+
+<section class="dc-terms-main">
+  <div class="container" data-aos="fade-up">
+    <div class="dc-terms-shell">
+
+      <!-- Left panel: article menu -->
+      <aside class="dc-terms-side">
+        <div class="dc-terms-side-inner">
+          <div class="dc-terms-side-logo"><i class="bi bi-hospital"></i></div>
+          <h2>DiaCare Analytics</h2>
+          <p class="dc-terms-side-sub">Terms of Service</p>
+          <ul class="dc-terms-nav" id="dcTermsNav">
+            <li><a href="#terms-1" class="active"><i class="bi bi-chevron-right"></i>Scope and Purpose</a></li>
+            <li><a href="#terms-2"><i class="bi bi-chevron-right"></i>Not a Medical Device</a></li>
+            <li><a href="#terms-3"><i class="bi bi-chevron-right"></i>Role-Based Access</a></li>
+            <li><a href="#terms-4"><i class="bi bi-chevron-right"></i>Data and Privacy</a></li>
+          </ul>
+        </div>
+      </aside>
+
+      <!-- Right panel: content -->
+      <div class="dc-terms-body">
+        <div class="dc-terms-head">
+          <div class="dc-terms-pill"><i class="bi bi-file-earmark-text"></i> Governance &amp; Policy</div>
+          <h1>Terms of Service</h1>
+          <span class="bar"></span>
+          <p>University project &mdash; internal hospital staff clinical decision-support platform guidelines and terms of use.</p>
+        </div>
+
+        <article class="dc-terms-art" id="terms-1" style="--c:#1558d6;">
+          <span class="dc-terms-art-ico"><i class="bi bi-bullseye"></i></span>
+          <h3><span class="num">1.</span> Scope and Purpose</h3>
+          <p>DiaCare Analytics is an internal hospital staff decision-support platform. It integrates six
+            machine-learning models to assist physicians and admission staff in prioritizing patient care.
+            The platform uses anonymized historical data from the UCI Diabetes 130-US Hospitals dataset
+            and is for demonstration purposes only.</p>
+        </article>
+
+        <article class="dc-terms-art" id="terms-2" style="--c:#e0483f;">
+          <span class="dc-terms-art-ico"><i class="bi bi-shield-exclamation"></i></span>
+          <h3><span class="num">2.</span> Not a Medical Device</h3>
+          <p>DiaCare Analytics is <strong>not a certified medical device</strong> and must not be used for
+            diagnosis, drug dosing, prescription orders, or definitive patient care decisions. All algorithmic
+            outputs are exploratory statistical indicators derived from retrospective data.</p>
+          <p>All recommendations are phrased as <em>"consider"</em> and serve solely to assist staff with
+            workflow prioritization. Staff must always apply independent clinical judgment.</p>
+        </article>
+
+        <article class="dc-terms-art" id="terms-3" style="--c:#4f46e5;">
+          <span class="dc-terms-art-ico"><i class="bi bi-people"></i></span>
+          <h3><span class="num">3.</span> Role-Based Access</h3>
+          <p>Access privileges are governed by user role:</p>
+          <ul>
+            <li><strong>Doctors:</strong> Full access to all clinical tools, admission planning, and patient summary.</li>
+            <li><strong>Reception / Admission Staff:</strong> Access restricted to Dashboard, Patient Summary,
+              Length of Stay, and Discharge Destination. Clinical diagnostic tools are server-restricted.</li>
+          </ul>
+        </article>
+
+        <article class="dc-terms-art" id="terms-4" style="--c:#0e9aa7;">
+          <span class="dc-terms-art-ico"><i class="bi bi-lock"></i></span>
+          <h3><span class="num">4.</span> Data and Privacy</h3>
+          <p>No real identifiable patient data is collected, stored, or transmitted:</p>
+          <ul>
+            <li><strong>Form inputs</strong> exist only in volatile server memory for the duration of the request.</li>
+            <li><strong>Batch CSV files</strong> are processed in-memory and never stored permanently.</li>
+            <li><strong>No external network calls</strong> are made by this platform.</li>
+          </ul>
+        </article>
+
+      </div>
+    </div>
+  </div>
+</section>
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  (function () {
+    var links = document.querySelectorAll('#dcTermsNav a');
+    var articles = document.querySelectorAll('.dc-terms-art');
+    if (!links.length || !articles.length) return;
+
+    function setActive(id) {
+      links.forEach(function (a) {
+        a.classList.toggle('active', a.getAttribute('href') === '#' + id);
+      });
+    }
+
+    // Smooth scroll on click
+    links.forEach(function (a) {
+      a.addEventListener('click', function (e) {
+        var target = document.querySelector(a.getAttribute('href'));
+        if (!target) return;
+        e.preventDefault();
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        setActive(target.id);
+      });
+    });
+
+    // Highlight the current article while scrolling
+    if ('IntersectionObserver' in window) {
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) setActive(entry.target.id);
+        });
+      }, { rootMargin: '-35% 0px -55% 0px', threshold: 0 });
+      articles.forEach(function (art) { io.observe(art); });
+    }
+  })();
+</script>
+{% endblock %}

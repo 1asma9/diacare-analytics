@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+
+{% block title %}Batch Discharge Destination Prediction — DiaCare Analytics{% endblock %}
+
+{% block extra_head %}
+<link href="{{ url_for('static', filename='css/dc-tools.css') }}" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="dc-tool" style="--c:#1558d6;">
+
+<!-- Hero Banner with Clinical Image -->
+<section class="dc-tool-hero">
+  <div class="container" data-aos="fade-up">
+    <div class="dc-tool-hero-card">
+      <div class="dc-tool-hero-text">
+        <div class="dc-tool-pill">
+          <i class="bi bi-file-earmark-spreadsheet"></i> Batch Evaluation &bull; Doctors &amp; Reception
+        </div>
+        <h1 class="dc-tool-title">Cohort Discharge Planning</h1>
+        <p class="dc-tool-desc">
+          Upload inpatient cohort CSV to predict post-acute discharge destinations and screen for transfer facility candidates across active hospital stays.
+        </p>
+      </div>
+      <div class="dc-tool-hero-media">
+        <img src="{{ url_for('static', filename='img/health/facilities-9.webp') }}" alt="Batch Discharge Planning">
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Content Section -->
+<section class="dc-tool-body">
+  <div class="container" data-aos="fade-up">
+
+    {% if error %}
+    <div class="dc-alert-err" role="alert">
+      <i class="bi bi-exclamation-triangle-fill"></i>
+      <div>{{ error }}</div>
+    </div>
+    {% endif %}
+
+    <!-- Upload Card -->
+    <div class="dc-tool-card">
+      <div class="dc-tool-card-head">
+        <div>
+          <h2 class="dc-tool-card-title">Upload Patient Cohort CSV</h2>
+          <p class="dc-tool-card-sub">Batch capacity: up to 5,000 patient records per execution.</p>
+        </div>
+        <a href="{{ url_for('admission.discharge_batch_template') }}" class="dc-btn-dl">
+          <i class="bi bi-download"></i>Download Template CSV
+        </a>
+      </div>
+
+      <form method="post" enctype="multipart/form-data" action="{{ url_for('admission.discharge_batch') }}">
+        <div class="mb-3">
+          <label class="form-label" for="file">Select CSV File</label>
+          <input class="form-control" type="file" id="file" name="file" accept=".csv" required>
+        </div>
+        <div class="dc-req">
+          <strong>Required Columns:</strong> <code>{{ columns|join(', ') }}</code>
+        </div>
+        <button type="submit" class="dc-btn-go">
+          <i class="bi bi-lightning-charge-fill"></i>Predict Batch Destinations
+        </button>
+      </form>
+    </div>
+
+    {% if result %}
+    <!-- Summary Stats Cards -->
+    <div class="row g-3 mb-4">
+      <div class="col-md-4">
+        <div class="dc-stat" style="--k:#1558d6;">
+          <span class="dc-stat-ico"><i class="bi bi-people"></i></span>
+          <div class="dc-stat-label">Patients Evaluated</div>
+          <div class="dc-stat-num">{{ result.summary.n }}</div>
+          <small>Total cohort records scored</small>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="dc-stat" style="--k:#f59e0b;">
+          <span class="dc-stat-ico"><i class="bi bi-bell"></i></span>
+          <div class="dc-stat-label">Transfer Alerts Flagged</div>
+          <div class="dc-stat-num">{{ result.summary.transfer_alerts }}</div>
+          <small>Patients requiring facility coordination</small>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="dc-stat" style="--k:#4f46e5;">
+          <span class="dc-stat-ico"><i class="bi bi-percent"></i></span>
+          <div class="dc-stat-label">Cohort Transfer Proportion</div>
+          <div class="dc-stat-num">{{ result.summary.pct_transfer }}%</div>
+          <small>Proportion flagged for post-acute transfer</small>
+        </div>
+      </div>
+    </div>
+
+    <!-- Ranked Table Card -->
+    <div class="dc-tool-card">
+      <div class="dc-tool-card-head">
+        <div>
+          <h2 class="dc-tool-card-title">Prioritized Discharge Cohort</h2>
+          <p class="dc-tool-card-sub">Sorted by highest transfer facility probability.</p>
+        </div>
+        <a href="{{ url_for('admission.discharge_batch_download') }}" class="dc-btn-dl fill">
+          <i class="bi bi-file-earmark-arrow-down"></i>Download Scored Cohort (CSV)
+        </a>
+      </div>
+
+      <div class="dc-table-wrap table-responsive">
+        <table class="table table-hover align-middle">
+          <thead>
+            <tr>
+              <th scope="col" style="width: 80px;">Rank</th>
+              <th scope="col">Patient Identifier</th>
+              <th scope="col" class="text-center">Predicted Destination</th>
+              <th scope="col" class="text-center">Transfer Prob.</th>
+              <th scope="col" class="text-center">Transfer Alert</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in result.preview %}
+            <tr>
+              <td class="fw-bold text-muted">#{{ r.rank }}</td>
+              <td class="fw-semibold text-dark">{{ r.id }}</td>
+              <td class="text-center fw-semibold">{{ r.prediction }}</td>
+              <td class="text-center fw-bold">{{ (r.transfer_prob * 100)|round(1) }}%</td>
+              <td class="text-center">
+                {% if r.transfer_alert == 'yes' %}
+                <span class="badge bg-warning text-dark px-3 py-1 rounded-pill"><i class="bi bi-exclamation-triangle-fill me-1"></i>Transfer Alert</span>
+                {% else %}
+                <span class="badge bg-success-subtle text-success px-3 py-1 rounded-pill">Standard Routine</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% endif %}
+
+  </div>
+</section>
+
+</div>
+{% endblock %}

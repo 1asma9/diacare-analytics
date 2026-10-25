@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}404 Not Found — DiaCare Analytics{% endblock %}
+
+{% block content %}
+
+<!-- Hero Banner with Clinical Image -->
+<section class="py-4">
+  <div class="container" data-aos="fade-up">
+    <div class="card border-0 shadow-sm" style="border-radius: 16px; overflow: hidden; background: #ffffff;">
+      <div class="row g-0 align-items-center">
+        <div class="col-lg-7 p-4 p-md-5">
+          <div class="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill mb-3" style="background-color: #ebf2ff; color: var(--accent-color); font-weight: 600; font-size: 0.85rem;">
+            <i class="bi bi-question-circle"></i> Error 404
+          </div>
+          <h1 class="display-6 fw-bold mb-2" style="color: var(--heading-color);">
+            Page Not Found
+          </h1>
+          <p class="text-muted mb-0">
+            The page you are looking for might have been moved, had its address changed, or is temporarily unavailable.
+          </p>
+        </div>
+        <div class="col-lg-5 p-3 p-md-4 text-center">
+          <img src="{{ url_for('static', filename='img/health/facilities-6.webp') }}"
+               alt="Page Not Found"
+               class="img-fluid rounded-4 shadow-sm"
+               style="max-height: 220px; width: 100%; object-fit: cover;">
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Actions -->
+<section class="py-2 pb-5">
+  <div class="container text-center" data-aos="fade-up">
+    <div class="d-flex justify-content-center gap-3">
+      <a href="{{ url_for('main.dashboard') if current_user else url_for('auth.login') }}" class="btn btn-primary px-4 py-2">
+        <i class="bi bi-house-door me-1"></i> Return Home
+      </a>
+    </div>
+  </div>
+</section>
+
+{% endblock %}

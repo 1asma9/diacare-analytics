@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta content="width=device-width, initial-scale=1.0" name="viewport">
+  <title>{% block title %}DiaCare Analytics — Hospital Decision Support{% endblock %}</title>
+  <meta name="description" content="DiaCare Analytics: Clinical decision support platform for diabetic inpatient follow-up.">
+
+  <!-- Favicons -->
+  <link href="{{ url_for('static', filename='img/favicon.png') }}" rel="icon">
+  <link href="{{ url_for('static', filename='img/apple-touch-icon.png') }}" rel="apple-touch-icon">
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com" rel="preconnect">
+  <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&family=Montserrat:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Lato:ital,wght@0,100;0,300;0,400;0,700;0,900;1,100;1,300;1,400;1,700;1,900&display=swap" rel="stylesheet">
+
+  <!-- Vendor CSS Files -->
+  <link href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
+  <link href="{{ url_for('static', filename='vendor/bootstrap-icons/bootstrap-icons.css') }}" rel="stylesheet">
+  <link href="{{ url_for('static', filename='vendor/aos/aos.css') }}" rel="stylesheet">
+  <link href="{{ url_for('static', filename='vendor/glightbox/css/glightbox.min.css') }}" rel="stylesheet">
+  <link href="{{ url_for('static', filename='vendor/fontawesome-free/css/all.min.css') }}" rel="stylesheet">
+  <link href="{{ url_for('static', filename='vendor/swiper/swiper-bundle.min.css') }}" rel="stylesheet">
+
+  <!-- Clinic Template Main CSS File -->
+  <link href="{{ url_for('static', filename='css/main.css') }}" rel="stylesheet">
+  
+  <!-- DiaCare Analytics Styles (Clinic Blue Palette) -->
+  <link href="{{ url_for('static', filename='css/diacare.css') }}" rel="stylesheet">
+
+  {% block extra_head %}{% endblock %}
+</head>
+
+<body class="starter-page-page">
+
+  <!-- Header (Clean fixed-top Clinic header, topbar removed) -->
+  <header id="header" class="header fixed-top">
+    <div class="branding d-flex align-items-center">
+      <div class="container position-relative d-flex align-items-center justify-content-between">
+        
+        <a href="{{ url_for('main.dashboard') if current_user else url_for('auth.login') }}" class="logo d-flex align-items-center text-decoration-none">
+          <i class="bi bi-hospital fs-3 text-primary me-2"></i>
+          <h1 class="sitename">DiaCare <span>Analytics</span></h1>
+        </a>
+
+        <nav id="navmenu" class="navmenu">
+          <ul>
+            {% if current_user %}
+              <!-- Dashboard -->
+              <li><a href="{{ url_for('main.dashboard') }}" class="{{ 'active' if request.path == url_for('main.dashboard') }}">Dashboard</a></li>
+
+              <!-- Patient report -->
+              <li><a href="{{ url_for('main.patient_summary') }}" class="{{ 'active' if request.path == url_for('main.patient_summary') or '/patient-report' in request.path }}">Patient Report</a></li>
+
+              <!-- Admission and planning dropdown -->
+              <li class="dropdown">
+                <a href="#" class="{{ 'active' if '/los' in request.path or '/discharge' in request.path or '/medication' in request.path }}">
+                  <span>Admission and planning</span> <i class="bi bi-chevron-down toggle-dropdown"></i>
+                </a>
+                <ul>
+                  <li class="dropdown-header px-3 py-1 small text-muted text-uppercase fw-bold">Length of stay</li>
+                  <li><a href="{{ url_for('admission.los_single') }}"><i class="bi bi-person me-2"></i>Single patient</a></li>
+                  <li><a href="{{ url_for('admission.los_batch') }}"><i class="bi bi-people me-2"></i>Several patients</a></li>
+                  <li class="dropdown-divider my-1"></li>
+                  <li class="dropdown-header px-3 py-1 small text-muted text-uppercase fw-bold">Discharge destination</li>
+                  <li><a href="{{ url_for('admission.discharge_single') }}"><i class="bi bi-box-arrow-right me-2"></i>Single patient</a></li>
+                  <li><a href="{{ url_for('admission.discharge_batch') }}"><i class="bi bi-collection me-2"></i>Several patients</a></li>
+                  <li class="dropdown-divider my-1"></li>
+                  <li class="dropdown-header px-3 py-1 small text-muted text-uppercase fw-bold">Medication load</li>
+                  <li><a href="{{ url_for('clinical.medication_single') }}"><i class="bi bi-capsule me-2"></i>Single patient</a></li>
+                  <li><a href="{{ url_for('clinical.medication_batch') }}"><i class="bi bi-table me-2"></i>Several patients</a></li>
+                </ul>
+              </li>
+
+              <!-- Clinical tools (doctors only) dropdown -->
+              {% if current_user.role == 'doctor' %}
+                <li class="dropdown">
+                  <a href="#" class="{{ 'active' if '/readmission' in request.path or '/hba1c' in request.path or '/medication' in request.path or '/profiles' in request.path }}">
+                    <span>Clinical tools</span> <i class="bi bi-chevron-down toggle-dropdown"></i>
+                  </a>
+                  <ul>
+                    <li class="dropdown-header px-3 py-1 small text-muted text-uppercase fw-bold">Readmission screening</li>
+                    <li><a href="{{ url_for('clinical.readmission_single') }}"><i class="bi bi-arrow-repeat me-2"></i>Single patient</a></li>
+                    <li><a href="{{ url_for('clinical.readmission_batch') }}"><i class="bi bi-table me-2"></i>Several patients</a></li>
+                    <li class="dropdown-divider my-1"></li>
+                    <li class="dropdown-header px-3 py-1 small text-muted text-uppercase fw-bold">HbA1c and treatment</li>
+                    <li><a href="{{ url_for('clinical.hba1c_single') }}"><i class="bi bi-droplet-half me-2"></i>Single patient</a></li>
+                    <li><a href="{{ url_for('clinical.hba1c_batch') }}"><i class="bi bi-table me-2"></i>Several patients</a></li>
+                    <li class="dropdown-divider my-1"></li>
+                    <li class="dropdown-header px-3 py-1 small text-muted text-uppercase fw-bold">Medication load</li>
+                    <li><a href="{{ url_for('clinical.medication_single') }}"><i class="bi bi-capsule me-2"></i>Single patient</a></li>
+                    <li><a href="{{ url_for('clinical.medication_batch') }}"><i class="bi bi-table me-2"></i>Several patients</a></li>
+                    <li class="dropdown-divider my-1"></li>
+                    <li class="dropdown-header px-3 py-1 small text-muted text-uppercase fw-bold">Patient profiles</li>
+                    <li><a href="{{ url_for('clinical.profiles_info') }}"><i class="bi bi-pie-chart me-2"></i>The two profiles</a></li>
+                    <li><a href="{{ url_for('clinical.profiles_patient') }}"><i class="bi bi-search me-2"></i>Where does this patient fit</a></li>
+                  </ul>
+                </li>
+              {% endif %}
+
+              <!-- Account dropdown -->
+              <li class="dropdown">
+                <a href="#">
+                  <span><i class="bi bi-person-circle me-1"></i>{{ current_user.name }}</span> <i class="bi bi-chevron-down toggle-dropdown"></i>
+                </a>
+                <ul>
+                  <li class="px-3 py-2 border-bottom">
+                    <div class="fw-bold text-dark">{{ current_user.name }}</div>
+                    <div class="small text-muted">{{ current_user.role_title }}</div>
+                    <span class="user-badge {{ 'user-badge-doctor' if current_user.role == 'doctor' else 'user-badge-reception' }} mt-1">
+                      {{ current_user.role|capitalize }}
+                    </span>
+                  </li>
+                  <li><a href="{{ url_for('main.terms') }}"><i class="bi bi-file-earmark-text me-2"></i>Terms of Service</a></li>
+                  <li class="dropdown-divider my-1"></li>
+                  <li><a href="{{ url_for('auth.logout') }}" class="text-danger"><i class="bi bi-box-arrow-right me-2 text-danger"></i>Sign out</a></li>
+                </ul>
+              </li>
+            {% else %}
+              <li><a href="{{ url_for('auth.login') }}" class="active"><i class="bi bi-box-arrow-in-right me-1"></i>Sign in</a></li>
+              <li><a href="{{ url_for('main.terms') }}">Terms</a></li>
+            {% endif %}
+          </ul>
+          <i class="mobile-nav-toggle d-xl-none bi bi-list"></i>
+        </nav>
+
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Area -->
+  <main class="main" style="padding-top: 85px; min-height: 82vh;">
+
+    <!-- Flash Messages Container -->
+    <div class="container pt-3">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show shadow-sm" role="alert">
+              <i class="bi {{ 'bi-check-circle-fill' if category == 'success' else 'bi-exclamation-triangle-fill' if category in ['warning', 'danger', 'error'] else 'bi-info-circle-fill' }} me-2"></i>
+              {{ message }}
+              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+    </div>
+
+    <!-- Page Content Block -->
+    {% block content %}{% endblock %}
+
+  </main>
+
+  <!-- Footer (Clinic Template Structure) -->
+  <footer id="footer" class="footer-16 footer position-relative mt-5 pt-4 border-top">
+    <div class="container">
+      <div class="footer-main py-4">
+        <div class="row align-items-start g-4">
+          <div class="col-lg-6">
+            <div class="brand-section">
+              <div class="d-flex align-items-center mb-3">
+                <i class="bi bi-hospital fs-3 text-primary me-2"></i>
+                <h4 class="mb-0 fw-bold" style="color:var(--heading-color);">DiaCare <span class="text-primary">Analytics</span></h4>
+              </div>
+              <p class="text-muted small mb-2">
+                Unified clinical decision-support platform for hospital staff following diabetic patients. Built on 69,970 patient stays from the UCI Diabetes 130-US hospitals data.
+              </p>
+              <p class="text-muted small mb-0">
+                <strong>Notice:</strong> University project, not a medical device. For internal clinical decision-support demonstration only.
+              </p>
+            </div>
+          </div>
+
+          <div class="col-lg-3 col-md-6">
+            <h6 class="fw-bold mb-3" style="color:var(--heading-color);">Navigation</h6>
+            <ul class="list-unstyled small mb-0">
+              <li class="mb-2"><a href="{{ url_for('main.dashboard') if current_user else url_for('auth.login') }}" class="text-muted text-decoration-none"><i class="bi bi-chevron-right me-1 text-primary"></i>Dashboard</a></li>
+              <li class="mb-2"><a href="{{ url_for('main.patient_summary') if current_user else url_for('auth.login') }}" class="text-muted text-decoration-none"><i class="bi bi-chevron-right me-1 text-primary"></i>Patient Report</a></li>
+              <li class="mb-2"><a href="{{ url_for('admission.los_single') if current_user else url_for('auth.login') }}" class="text-muted text-decoration-none"><i class="bi bi-chevron-right me-1 text-primary"></i>Length of Stay</a></li>
+              <li class="mb-2"><a href="{{ url_for('admission.discharge_single') if current_user else url_for('auth.login') }}" class="text-muted text-decoration-none"><i class="bi bi-chevron-right me-1 text-primary"></i>Discharge Destination</a></li>
+            </ul>
+          </div>
+
+          <div class="col-lg-3 col-md-6">
+            <h6 class="fw-bold mb-3" style="color:var(--heading-color);">Legal &amp; Policy</h6>
+            <ul class="list-unstyled small mb-0">
+              <li class="mb-2"><a href="{{ url_for('main.terms') }}" class="text-muted text-decoration-none"><i class="bi bi-file-earmark-text me-1 text-primary"></i>Terms of Service</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer-bottom py-3 border-top">
+        <div class="d-flex flex-wrap justify-content-between align-items-center small text-muted">
+          <div>
+            &copy; 2026 <strong class="text-dark">DiaCare Analytics</strong>. University project, not a medical device.
+          </div>
+          <div>
+            Clinic Bootstrap Template
+          </div>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Scroll Top -->
+  <a href="#!" id="scroll-top" class="scroll-top d-flex align-items-center justify-content-center">
+    <i class="bi bi-arrow-up-short"></i>
+  </a>
+
+  <!-- Vendor JS Files -->
+  <script src="{{ url_for('static', filename='vendor/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='vendor/aos/aos.js') }}"></script>
+  <script src="{{ url_for('static', filename='vendor/glightbox/js/glightbox.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='vendor/purecounter/purecounter_vanilla.js') }}"></script>
+  <script src="{{ url_for('static', filename='vendor/swiper/swiper-bundle.min.js') }}"></script>
+
+  <!-- Clinic Template JS -->
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+
+  <!-- Shared Interactive Script -->
+  <script src="{{ url_for('static', filename='js/diacare.js') }}"></script>
+
+  {% block extra_scripts %}{% endblock %}
+
+</body>
+</html>

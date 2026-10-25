@@ -1,0 +1,421 @@
+{% extends "base.html" %}
+
+{% block title %}Discharge Destination Prediction — DiaCare Analytics{% endblock %}
+
+{% block extra_head %}
+<link href="{{ url_for('static', filename='css/dc-tools.css') }}" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="dc-tool" style="--c:#1558d6;">
+
+<!-- Hero Banner with Clinical Image -->
+<section class="dc-tool-hero">
+  <div class="container" data-aos="fade-up">
+    <div class="dc-tool-hero-card">
+      <div class="dc-tool-hero-text">
+        <div class="dc-tool-pill">
+          <i class="bi bi-box-arrow-right"></i> Admission &amp; Planning &bull; Doctors &amp; Reception
+        </div>
+        <h1 class="dc-tool-title">Discharge Destination Prediction</h1>
+        <p class="dc-tool-desc">
+          Predicts the likely post-discharge destination across 4 modalities and flags early transfer alert to organize social worker support and avoid discharge bottlenecks.
+        </p>
+        <div class="dc-tool-chips">
+          <span class="dc-tool-chip"><i class="bi bi-pie-chart"></i>4 Destination Classes</span>
+          <span class="dc-tool-chip"><i class="bi bi-bell-fill"></i>Transfer Alert: AUC 0.834</span>
+          <span class="dc-tool-chip"><i class="bi bi-eye-slash-fill"></i>Zero Data Leakage</span>
+        </div>
+      </div>
+      <div class="dc-tool-hero-media">
+        <img src="{{ url_for('static', filename='img/health/facilities-9.webp') }}" alt="Hospital Discharge and Post-Acute Planning">
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Content Section -->
+<section class="dc-tool-body">
+  <div class="container" data-aos="fade-up">
+
+    {% if errors %}
+    <div class="dc-alert-err" role="alert">
+      <i class="bi bi-exclamation-triangle-fill"></i>
+      <div>
+        <h6>Please review the following inputs:</h6>
+        <ul>
+          {% for e in errors %}<li>{{ e }}</li>{% endfor %}
+        </ul>
+      </div>
+    </div>
+    {% endif %}
+
+    {% if result %}
+    <!-- RESULT CARD -->
+    <div class="dc-res">
+      <div class="dc-res-head">
+        <div>
+          <span class="dc-res-badge"><i class="bi bi-check2-circle"></i>Assessment Complete</span>
+          <h2 class="dc-res-title">Predicted Discharge Destination</h2>
+        </div>
+        <div class="dc-res-btns">
+          <button type="button" class="dc-btn-ghost" onclick="window.print()">
+            <i class="bi bi-printer"></i>Print Report
+          </button>
+          <a href="{{ url_for('admission.discharge_single') }}" class="dc-btn-solid">
+            <i class="bi bi-plus-circle"></i>New Patient
+          </a>
+        </div>
+      </div>
+
+      <div class="dc-res-body">
+        <div class="dc-res-grid">
+          <!-- Main Predicted Class & Alert -->
+          <div class="dc-res-left">
+            <div class="dc-label">Most Probable Destination</div>
+            <div class="dc-bigval" style="color: var(--dc-navy);">{{ result.pred_label }}</div>
+
+            {% if result.transfer_alert %}
+            <div class="dc-note" style="background-color: #ebf2ff; border-left: 4px solid #175cdd;">
+              <strong><i class="bi bi-exclamation-octagon-fill me-1" style="color: #175cdd;"></i>Transfer Facility Alert Flagged</strong>
+              <p>
+                Transfer probability: <strong>{{ (result.transfer_prob * 100)|round(1) }}%</strong> (exceeds alert threshold of {{ (result.threshold * 100)|round(1) }}%). Contact hospital discharge coordinator for bed placement.
+              </p>
+            </div>
+            {% else %}
+            <div class="dc-note" style="background-color: #e0f2fe; border-left: 4px solid #0ea5e9;">
+              <strong><i class="bi bi-check-circle-fill me-1" style="color: #0ea5e9;"></i>Standard Discharge Pathway</strong>
+              <p>
+                Transfer probability is low (<strong>{{ (result.transfer_prob * 100)|round(1) }}%</strong>). Routine post-discharge arrangements recommended.
+              </p>
+            </div>
+            {% endif %}
+          </div>
+
+          <!-- Class Probabilities Breakdown -->
+          <div>
+            <div class="dc-res-h">
+              <span><i class="bi bi-bar-chart-fill"></i>Probability Distribution by Destination</span>
+              <span class="dc-cut">Transfer Cutoff: {{ (result.threshold * 100)|round(1) }}%</span>
+            </div>
+
+            {% for c, p in result.probs.items() %}
+            {% set pct = (p * 100)|round(1) %}
+            <div class="dc-bar-row">
+              <div class="dc-bar-top">
+                <span>{{ class_label.get(c, c) }}</span>
+                <span class="dc-pct">{{ pct }}%</span>
+              </div>
+              <div class="progress" style="height: 10px; border-radius: 6px;">
+                <div class="progress-bar"
+                     role="progressbar"
+                     style="width: {{ pct }}%; background-color: {% if c == result.pred %}{% if result.transfer_alert and c in ['Transfer', 'transfer', '2'] %}#175cdd{% else %}#0ea5e9{% endif %}{% else %}#cbd5e1{% endif %};"
+                     aria-valuenow="{{ pct }}" aria-valuemin="0" aria-valuemax="100">
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+
+        <!-- Short Interpretation of Results (Below Results) -->
+        <div class="dc-interp">
+          <div class="dc-interp-t"><i class="bi bi-info-circle-fill"></i>Clinical Interpretation:</div>
+          <p>
+            {% if result.transfer_alert %}
+              Patient is flagged with a <strong>Post-Acute Transfer Facility Alert</strong> (evaluated transfer probability: <strong>{{ (result.transfer_prob * 100)|round(1) }}%</strong>, exceeding the calibrated threshold of {{ (result.threshold * 100)|round(1) }}%). Early transitional care coordination with hospital social work and case management is recommended to initiate skilled nursing, rehab, or long-term care bed authorization.
+            {% else %}
+              Patient is evaluated on the <strong>Standard Discharge Pathway</strong> with most probable destination <strong>{{ result.pred_label }}</strong>. Evaluated transfer probability is low (<strong>{{ (result.transfer_prob * 100)|round(1) }}%</strong>, below threshold). Standard outpatient transitional discharge instructions and primary care follow-up are indicated.
+            {% endif %}
+          </p>
+        </div>
+
+        <!-- Advisory Banner -->
+        <div class="dc-advisory">
+          <i class="bi bi-info-circle-fill"></i>
+          <div>
+            <strong>Decision Support Advisory:</strong> DiaCare models assist clinical prioritization and transitional care allocation. They do not constitute diagnostic or prescriptive orders. Always consider the full clinical context.
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- INPUT FORM CARD -->
+    <div class="dc-tool-card">
+      <div class="dc-tool-card-head">
+        <div>
+          <h2 class="dc-tool-card-title">Patient Clinical &amp; Hospital Stay Parameters</h2>
+          <p class="dc-tool-card-sub">Discharge destination is strictly excluded from inputs to guarantee zero data leakage.</p>
+        </div>
+      </div>
+
+      <div class="dc-tool-sample justify-content-end mb-4">
+        <span>Try sample:</span>
+        <button type="button" class="dc-tool-sbtn ok" data-example='{{ examples.home|tojson|forceescape }}'>
+          Routine Home Discharge
+        </button>
+        <button type="button" class="dc-tool-sbtn danger" data-example='{{ examples.transfer|tojson|forceescape }}'>
+          Transfer Candidate
+        </button>
+      </div>
+
+      <form id="dischargeForm" method="post" action="{{ url_for('admission.discharge_single') }}">
+
+        <!-- Section 1 -->
+        <h6 class="dc-tool-sec">1. Stay Parameters &amp; Demographics</h6>
+        <div class="row g-3 mb-4">
+          <div class="col-md-6 col-lg-3">
+            <label class="form-label" for="age">Patient Age (Years)</label>
+            <input type="number" class="form-control" id="age" name="age" min="0" max="100" value="{{ d.age }}">
+          </div>
+
+          <div class="col-md-6 col-lg-3">
+            <label class="form-label" for="gender">Gender</label>
+            <select class="form-select" id="gender" name="gender">
+              {% for g in genders %}
+              <option value="{{ g }}" {% if d.gender == g %}selected{% endif %}>{{ g }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="col-md-6 col-lg-3">
+            <label class="form-label" for="race">Race / Ethnicity</label>
+            <select class="form-select" id="race" name="race">
+              {% for r in races %}
+              <option value="{{ r }}" {% if d.race == r %}selected{% endif %}>{{ r }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="col-md-6 col-lg-3">
+            <label class="form-label" for="admission_type_id">Admission Type</label>
+            <select class="form-select" id="admission_type_id" name="admission_type_id">
+              {% for val, txt in adm_types %}
+              <option value="{{ val }}" {% if d.admission_type_id|string == val|string %}selected{% endif %}>{{ txt }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="col-md-6 col-lg-4">
+            <label class="form-label" for="admission_source_id">Admission Source</label>
+            <select class="form-select" id="admission_source_id" name="admission_source_id">
+              {% for val, txt in adm_srcs %}
+              <option value="{{ val }}" {% if d.admission_source_id|string == val|string %}selected{% endif %}>{{ txt }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="col-md-6 col-lg-4">
+            <label class="form-label" for="payer_code">Insurance / Payer</label>
+            <select class="form-select" id="payer_code" name="payer_code">
+              {% for p in payers %}
+              <option value="{{ p }}" {% if d.payer_code == p %}selected{% endif %}>{{ p }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="col-md-6 col-lg-4">
+            <label class="form-label" for="medical_specialty">Medical Specialty</label>
+            <select class="form-select" id="medical_specialty" name="medical_specialty">
+              {% for s in specialties %}
+              <option value="{{ s }}" {% if d.medical_specialty == s %}selected{% endif %}>{{ s }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="col-md-6 col-lg-3">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <label class="form-label mb-0" for="time_in_hospital">Length of Stay</label>
+              <span class="dc-val" id="time_in_hospital_v">{{ d.time_in_hospital }} days</span>
+            </div>
+            <input type="range" class="form-range" id="time_in_hospital" name="time_in_hospital" min="{{ limits.time_in_hospital[0] }}" max="{{ limits.time_in_hospital[1] }}" value="{{ d.time_in_hospital }}">
+          </div>
+
+          <div class="col-md-6 col-lg-3">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <label class="form-label mb-0" for="number_diagnoses">Total Diagnoses</label>
+              <span class="dc-val" id="number_diagnoses_v">{{ d.number_diagnoses }}</span>
+            </div>
+            <input type="range" class="form-range" id="number_diagnoses" name="number_diagnoses" min="{{ limits.number_diagnoses[0] }}" max="{{ limits.number_diagnoses[1] }}" value="{{ d.number_diagnoses }}">
+          </div>
+
+          <div class="col-md-6 col-lg-3">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <label class="form-label mb-0" for="num_lab_procedures">Lab Tests</label>
+              <span class="dc-val" id="num_lab_procedures_v">{{ d.num_lab_procedures }}</span>
+            </div>
+            <input type="range" class="form-range" id="num_lab_procedures" name="num_lab_procedures" min="{{ limits.num_lab_procedures[0] }}" max="{{ limits.num_lab_procedures[1] }}" value="{{ d.num_lab_procedures }}">
+          </div>
+
+          <div class="col-md-6 col-lg-3">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <label class="form-label mb-0" for="num_procedures">Procedures</label>
+              <span class="dc-val" id="num_procedures_v">{{ d.num_procedures }}</span>
+            </div>
+            <input type="range" class="form-range" id="num_procedures" name="num_procedures" min="{{ limits.num_procedures[0] }}" max="{{ limits.num_procedures[1] }}" value="{{ d.num_procedures }}">
+          </div>
+        </div>
+
+        <!-- Section 2 -->
+        <h6 class="dc-tool-sec">2. Diagnosis Codes &amp; Past Stays</h6>
+        <div class="row g-3 mb-4">
+          <div class="col-md-4">
+            <label class="form-label" for="diag_1">Primary ICD-9 Code</label>
+            <input type="text" class="form-control" id="diag_1" name="diag_1" value="{{ d.diag_1 }}" placeholder="e.g. 428">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label" for="diag_2">Secondary ICD-9 Code 2</label>
+            <input type="text" class="form-control" id="diag_2" name="diag_2" value="{{ d.diag_2 }}" placeholder="e.g. 250">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label" for="diag_3">Secondary ICD-9 Code 3</label>
+            <input type="text" class="form-control" id="diag_3" name="diag_3" value="{{ d.diag_3 }}" placeholder="e.g. NA">
+          </div>
+
+          <div class="col-md-3">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <label class="form-label mb-0" for="number_inpatient">Inpatient Stays</label>
+              <span class="dc-val" id="number_inpatient_v">{{ d.number_inpatient }}</span>
+            </div>
+            <input type="range" class="form-range" id="number_inpatient" name="number_inpatient" min="{{ limits.number_inpatient[0] }}" max="{{ limits.number_inpatient[1] }}" value="{{ d.number_inpatient }}">
+          </div>
+
+          <div class="col-md-3">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <label class="form-label mb-0" for="number_emergency">Emergency Visits</label>
+              <span class="dc-val" id="number_emergency_v">{{ d.number_emergency }}</span>
+            </div>
+            <input type="range" class="form-range" id="number_emergency" name="number_emergency" min="{{ limits.number_emergency[0] }}" max="{{ limits.number_emergency[1] }}" value="{{ d.number_emergency }}">
+          </div>
+
+          <div class="col-md-3">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <label class="form-label mb-0" for="number_outpatient">Outpatient Visits</label>
+              <span class="dc-val" id="number_outpatient_v">{{ d.number_outpatient }}</span>
+            </div>
+            <input type="range" class="form-range" id="number_outpatient" name="number_outpatient" min="{{ limits.number_outpatient[0] }}" max="{{ limits.number_outpatient[1] }}" value="{{ d.number_outpatient }}">
+          </div>
+
+          <div class="col-md-3">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <label class="form-label mb-0" for="sejours_anterieurs">Prior Stays (Patient)</label>
+              <span class="dc-val" id="sejours_anterieurs_v">{{ d.sejours_anterieurs }}</span>
+            </div>
+            <input type="range" class="form-range" id="sejours_anterieurs" name="sejours_anterieurs" min="{{ limits.sejours_anterieurs[0] }}" max="{{ limits.sejours_anterieurs[1] }}" value="{{ d.sejours_anterieurs }}">
+          </div>
+        </div>
+
+        <!-- Section 3 -->
+        <h6 class="dc-tool-sec">3. Pharmacotherapy &amp; Glycemic Indicators</h6>
+        <div class="row g-3 mb-4">
+          <div class="col-md-4">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <label class="form-label mb-0" for="num_medications">Total Medications</label>
+              <span class="dc-val" id="num_medications_v">{{ d.num_medications }}</span>
+            </div>
+            <input type="range" class="form-range" id="num_medications" name="num_medications" min="{{ limits.num_medications[0] }}" max="{{ limits.num_medications[1] }}" value="{{ d.num_medications }}">
+          </div>
+
+          <div class="col-md-4">
+            <label class="form-label" for="insulin">Insulin</label>
+            <select class="form-select" id="insulin" name="insulin">
+              {% for i in insulins %}
+              <option value="{{ i }}" {% if d.insulin == i %}selected{% endif %}>{{ i }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="col-md-4">
+            <label class="form-label" for="metformin">Metformin</label>
+            <select class="form-select" id="metformin" name="metformin">
+              {% for m in metformins %}
+              <option value="{{ m }}" {% if d.metformin == m %}selected{% endif %}>{{ m }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="col-md-3">
+            <label class="form-label" for="A1Cresult">HbA1c Result</label>
+            <select class="form-select" id="A1Cresult" name="A1Cresult">
+              {% for a in a1c_opts %}
+              <option value="{{ a }}" {% if d.A1Cresult == a %}selected{% endif %}>{{ a }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="col-md-3">
+            <label class="form-label" for="max_glu_serum">Max Glucose Serum</label>
+            <select class="form-select" id="max_glu_serum" name="max_glu_serum">
+              {% for g in glu_opts %}
+              <option value="{{ g }}" {% if d.max_glu_serum == g %}selected{% endif %}>{{ g }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="col-md-3">
+            <label class="form-label" for="change">Medication Change</label>
+            <select class="form-select" id="change" name="change">
+              {% for val, txt in change_opts %}
+              <option value="{{ val }}" {% if d.change == val %}selected{% endif %}>{{ txt }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="col-md-3">
+            <label class="form-label" for="diabetesMed">Diabetes Medication</label>
+            <select class="form-select" id="diabetesMed" name="diabetesMed">
+              {% for val in yesno %}
+              <option value="{{ val }}" {% if d.diabetesMed == val %}selected{% endif %}>{{ val }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <div class="dc-tool-actions">
+          <button type="submit" class="dc-btn-go" id="submitBtn">
+            <i class="bi bi-compass"></i>Predict Discharge Destination
+          </button>
+          <a href="{{ url_for('admission.discharge_single') }}" class="dc-btn-reset">
+            <i class="bi bi-arrow-counterclockwise"></i>Reset Form
+          </a>
+        </div>
+      </form>
+    </div>
+
+  </div>
+</section>
+
+</div>
+
+<script>
+document.querySelectorAll('input[type=range]').forEach(function(slider) {
+  var out = document.getElementById(slider.id + '_v');
+  var sync = function() {
+    if (out) {
+      if (slider.id === 'time_in_hospital') {
+        out.textContent = slider.value + ' days';
+      } else {
+        out.textContent = slider.value;
+      }
+    }
+  };
+  slider.addEventListener('input', sync);
+  sync();
+});
+
+document.querySelectorAll('[data-example]').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    var ex = JSON.parse(btn.getAttribute('data-example'));
+    Object.keys(ex).forEach(function(k) {
+      var el = document.getElementById(k);
+      if (el) {
+        el.value = ex[k];
+        el.dispatchEvent(new Event('input'));
+      }
+    });
+  });
+});
+</script>
+
+{% endblock %}

@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+
+{% block title %}Batch Readmission Screening — DiaCare Analytics{% endblock %}
+
+{% block extra_head %}
+<link href="{{ url_for('static', filename='css/dc-tools.css') }}" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="dc-tool" style="--c:#1558d6;">
+
+<!-- Hero Banner with Clinical Image -->
+<section class="dc-tool-hero">
+  <div class="container" data-aos="fade-up">
+    <div class="dc-tool-hero-card">
+      <div class="dc-tool-hero-text">
+        <div class="dc-tool-pill">
+          <i class="bi bi-file-earmark-spreadsheet"></i> Batch Evaluation &bull; Doctors Only
+        </div>
+        <h1 class="dc-tool-title">Cohort Readmission Screening</h1>
+        <p class="dc-tool-desc">
+          Upload an inpatient cohort CSV file to evaluate and rank diabetic patients by early readmission risk, optimizing post-discharge transitional care team workflow.
+        </p>
+      </div>
+      <div class="dc-tool-hero-media">
+        <img src="{{ url_for('static', filename='img/health/neurology-4.webp') }}" alt="Batch Readmission Screening">
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Content Section -->
+<section class="dc-tool-body">
+  <div class="container" data-aos="fade-up">
+
+    {% if error %}
+    <div class="dc-alert-err" role="alert">
+      <i class="bi bi-exclamation-triangle-fill"></i>
+      <div>{{ error }}</div>
+    </div>
+    {% endif %}
+
+    <!-- Upload Card -->
+    <div class="dc-tool-card">
+      <div class="dc-tool-card-head">
+        <div>
+          <h2 class="dc-tool-card-title">Upload Patient Cohort CSV</h2>
+          <p class="dc-tool-card-sub">Support for up to 5,000 inpatient records per file batch.</p>
+        </div>
+        <a href="{{ url_for('clinical.readmission_batch_template') }}" class="dc-btn-dl">
+          <i class="bi bi-download"></i>Download Template CSV
+        </a>
+      </div>
+
+      <form method="post" enctype="multipart/form-data" action="{{ url_for('clinical.readmission_batch') }}">
+        <div class="mb-3">
+          <label class="form-label" for="file">Select CSV File</label>
+          <input class="form-control" type="file" id="file" name="file" accept=".csv" required>
+        </div>
+        <div class="dc-req">
+          <strong>Required Columns:</strong> <code>{{ columns|join(', ') }}</code><br>
+          <span>Note: <code>age_group</code> ranges from 1 to 10 (1 = [0-10), 2 = [10-20), ... 10 = [90-100)).</span>
+        </div>
+        <button type="submit" class="dc-btn-go">
+          <i class="bi bi-lightning-charge-fill"></i>Process &amp; Rank Cohort
+        </button>
+      </form>
+    </div>
+
+    {% if result %}
+    <!-- Summary Stats Cards -->
+    <div class="row g-3 mb-4">
+      <div class="col-md-4">
+        <div class="dc-stat" style="--k:#1558d6;">
+          <span class="dc-stat-ico"><i class="bi bi-people"></i></span>
+          <div class="dc-stat-label">Patients Evaluated</div>
+          <div class="dc-stat-num">{{ result.summary.n }}</div>
+          <small>Total records in uploaded cohort</small>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="dc-stat" style="--k:#f59e0b;">
+          <span class="dc-stat-ico"><i class="bi bi-telephone-outbound"></i></span>
+          <div class="dc-stat-label">Priority Follow-up Required</div>
+          <div class="dc-stat-num">{{ result.summary.flagged }}</div>
+          <small>Score &ge; {{ (result.summary.threshold * 100)|round(1) }}% decision threshold</small>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="dc-stat" style="--k:#e0483f;">
+          <span class="dc-stat-ico"><i class="bi bi-exclamation-octagon"></i></span>
+          <div class="dc-stat-label">High Risk Inpatients</div>
+          <div class="dc-stat-num">{{ result.summary.high }}</div>
+          <small>Top risk tier requiring urgent follow-up</small>
+        </div>
+      </div>
+    </div>
+
+    <!-- Ranked Table Card -->
+    <div class="dc-tool-card">
+      <div class="dc-tool-card-head">
+        <div>
+          <h2 class="dc-tool-card-title">Prioritized Clinical Outreach List</h2>
+          <p class="dc-tool-card-sub">Showing top 25 highest-risk patients sorted by predicted readmission risk.</p>
+        </div>
+        <a href="{{ url_for('clinical.readmission_batch_download') }}" class="dc-btn-dl fill">
+          <i class="bi bi-file-earmark-arrow-down"></i>Download Full Scored Cohort (CSV)
+        </a>
+      </div>
+
+      <div class="dc-table-wrap table-responsive">
+        <table class="table table-hover align-middle">
+          <thead>
+            <tr>
+              <th scope="col" style="width: 80px;">Rank</th>
+              <th scope="col">Patient Identifier</th>
+              <th scope="col" class="text-center">Readmission Risk</th>
+              <th scope="col" class="text-center">Risk Level</th>
+              <th scope="col" class="text-center">Follow-up Priority</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in result.preview %}
+            <tr>
+              <td class="fw-bold text-muted">#{{ r.rank }}</td>
+              <td class="fw-semibold text-dark">{{ r.id }}</td>
+              <td class="text-center fw-bold">{{ (r.risk * 100)|round(1) }}%</td>
+              <td class="text-center">
+                <span class="badge {% if r.level == 'high' %}bg-danger{% elif r.level == 'elevated' %}bg-warning text-dark{% else %}bg-success{% endif %} px-3 py-1 rounded-pill">
+                  {{ r.level|capitalize }}
+                </span>
+              </td>
+              <td class="text-center">
+                {% if r.follow_up == 'yes' %}
+                <span class="badge bg-danger-subtle text-danger px-3 py-1 rounded-pill"><i class="bi bi-telephone-outbound me-1"></i>Call Priority</span>
+                {% else %}
+                <span class="badge bg-light text-muted px-3 py-1 rounded-pill">Routine</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% endif %}
+
+  </div>
+</section>
+
+</div>
+{% endblock %}

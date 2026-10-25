@@ -1,0 +1,485 @@
+{% extends "base.html" %}
+
+{% block title %}HbA1c & Treatment Decision — DiaCare Analytics{% endblock %}
+
+{% block extra_head %}
+<link href="{{ url_for('static', filename='css/dc-tools.css') }}" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="dc-tool" style="--c:#1558d6;">
+
+<!-- Hero Banner with Clinical Image -->
+<section class="dc-tool-hero">
+  <div class="container" data-aos="fade-up">
+    <div class="dc-tool-hero-card">
+      <div class="dc-tool-hero-text">
+        <div class="dc-tool-pill">
+          <i class="bi bi-droplet-half"></i> Clinical Decision Support &bull; Doctors Only
+        </div>
+        <h1 class="dc-tool-title">HbA1c & Treatment Decision</h1>
+        <p class="dc-tool-desc">
+          Evidence-based 55-variable logistic regression model evaluating readmission risk and the clinical benefit of inpatient glycemic monitoring (HbA1c testing).
+        </p>
+        <div class="dc-tool-chips">
+          <span class="dc-tool-chip"><i class="bi bi-graph-up"></i>55-Feature Logistic Model</span>
+          <span class="dc-tool-chip"><i class="bi bi-shield-check"></i>HbA1c OR: 0.904 (Protective)</span>
+          <span class="dc-tool-chip"><i class="bi bi-bullseye"></i>Threshold: 8.85%</span>
+        </div>
+      </div>
+      <div class="dc-tool-hero-media">
+        <img src="{{ url_for('static', filename='img/health/consultation-4.webp') }}" alt="Clinical HbA1c Consultation">
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Content Form & Results Section -->
+<section class="dc-tool-body">
+  <div class="container" data-aos="fade-up">
+
+    {% if errors %}
+    <div class="dc-alert-err" role="alert">
+      <i class="bi bi-exclamation-triangle-fill"></i>
+      <div>
+        <h6>Please review the following inputs:</h6>
+        <ul>
+          {% for e in errors %}<li>{{ e }}</li>{% endfor %}
+        </ul>
+      </div>
+    </div>
+    {% endif %}
+
+    {% if result %}
+    <!-- RESULT CARD -->
+    <div class="dc-res">
+      <div class="dc-res-head">
+        <div>
+          <span class="dc-res-badge"><i class="bi bi-check2-circle"></i>Assessment Complete</span>
+          <h2 class="dc-res-title">Estimated Readmission Risk & Glycemic Status</h2>
+        </div>
+        <div class="dc-res-btns">
+          <button type="button" class="dc-btn-ghost" onclick="window.print()">
+            <i class="bi bi-printer"></i>Print Report
+          </button>
+          <a href="{{ url_for('clinical.hba1c_single') }}" class="dc-btn-solid">
+            <i class="bi bi-plus-circle"></i>New Patient
+          </a>
+        </div>
+      </div>
+
+      <div class="dc-res-body">
+        {% set p_pct = result.pct %}
+        {% set band = result.band %}
+
+        <div class="dc-res-grid">
+          <!-- Gauge Column -->
+          <div class="dc-res-left">
+            {% set gauge_angle = [[result.p / 0.30, 1.0]|min, 0.0]|max %}
+
+            <div class="dc-gauge">
+              <svg viewBox="0 0 200 120" role="img" aria-label="Risk {{ p_pct }}%">
+                <path d="M20 100 A80 80 0 0 1 180 100" fill="none" stroke="#e9ecef" stroke-width="16" stroke-linecap="round"/>
+                <path d="M20 100 A80 80 0 0 1 180 100" fill="none"
+                      stroke="{% if band == 'high' %}#dc3545{% elif band == 'elevated' %}#175cdd{% else %}#0ea5e9{% endif %}"
+                      stroke-width="16" stroke-linecap="round" pathLength="100"
+                      stroke-dasharray="{{ (gauge_angle * 100)|round(1) }} 100"/>
+                <text x="100" y="92" text-anchor="middle" font-size="32" font-weight="800" fill="var(--dc-ink)">{{ p_pct }}%</text>
+              </svg>
+            </div>
+
+            <div class="mt-2">
+              <span class="dc-bigbadge" style="{% if band == 'high' %}background-color: #dc3545;{% elif band == 'elevated' %}background-color: #175cdd;{% else %}background-color: #0ea5e9;{% endif %}">
+                {% if band == 'high' %}High Risk Level{% elif band == 'elevated' %}Elevated Risk Level{% else %}Lower Risk Level{% endif %}
+              </span>
+            </div>
+
+            <p class="mt-3 mb-1 small" style="color: var(--dc-muted);">
+              Calibrated decision threshold: <strong>{{ (result.thr * 100)|round(2) }}%</strong> &bull; Hospital average rate: <strong>{{ (result.base_rate * 100)|round(2) }}%</strong>
+            </p>
+
+            <!-- Probability Distribution -->
+            <div class="mt-4 pt-3 text-start" style="border-top: 1px dashed var(--dc-line);">
+              <div class="dc-res-h" style="font-size: .9rem; margin-bottom: 14px;">
+                <span><i class="bi bi-bar-chart-fill"></i>Probability Distribution</span>
+                <span class="dc-cut">Cutoff: {{ (result.thr * 100)|round(1) }}%</span>
+              </div>
+
+              <div class="dc-bar-row">
+                <div class="dc-bar-top">
+                  <span>Current Readmission Risk</span>
+                  <span class="dc-pct" style="color: {% if band == 'high' %}#dc3545{% elif band == 'elevated' %}#175cdd{% else %}#0ea5e9{% endif %};">{{ p_pct }}%</span>
+                </div>
+                <div class="progress" style="height: 10px; border-radius: 6px;">
+                  <div class="progress-bar" style="width: {{ [p_pct, 100]|min }}%; background-color: {% if band == 'high' %}#dc3545{% elif band == 'elevated' %}#175cdd{% else %}#0ea5e9{% endif %};"></div>
+                </div>
+              </div>
+
+              {% if result.row.a1c_tested == 'No' %}
+              {% set proj_pct = (p_pct * 0.904)|round(1) %}
+              <div class="dc-bar-row">
+                <div class="dc-bar-top">
+                  <span><i class="bi bi-arrow-down-short" style="color: var(--dc-mid);"></i>Projected Risk if HbA1c Tested (OR 0.904)</span>
+                  <span class="dc-pct" style="color: #175cdd;">{{ proj_pct }}%</span>
+                </div>
+                <div class="progress" style="height: 10px; border-radius: 6px;">
+                  <div class="progress-bar" style="width: {{ [proj_pct, 100]|min }}%; background-color: #175cdd;"></div>
+                </div>
+              </div>
+              {% endif %}
+
+              <div class="dc-bar-row mb-0">
+                <div class="dc-bar-top">
+                  <span>No 30-Day Readmission</span>
+                  <span class="dc-pct" style="color: #0ea5e9;">{{ (100 - p_pct)|round(1) }}%</span>
+                </div>
+                <div class="progress" style="height: 10px; border-radius: 6px;">
+                  <div class="progress-bar" style="width: {{ [100 - p_pct, 100]|min }}%; background-color: #0ea5e9;"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Clinical Context & Recommendation -->
+          <div>
+            <div class="dc-res-h">
+              <span><i class="bi bi-clipboard2-pulse"></i>Glycemic Decision Support</span>
+            </div>
+
+            <div class="dc-note" style="margin-top: 0; margin-bottom: 18px; border-left: 4px solid var(--dc-mid);">
+              <strong>Inpatient Protocol Guidance:</strong>
+              <p>
+                {% if result.row.a1c_tested == 'No' %}
+                  <span class="text-danger fw-bold"><i class="bi bi-exclamation-circle-fill me-1"></i>HbA1c not performed during current stay.</span>
+                  Clinical study demonstrates that testing HbA1c reduces 30-day readmission hazard by ~9.6% (OR 0.904). <strong>Order inpatient HbA1c before discharge</strong> to establish glycemic baseline and adjust outpatient regimen.
+                {% else %}
+                  <span class="text-success fw-bold"><i class="bi bi-check-circle-fill me-1"></i>HbA1c measured during this hospitalization.</span>
+                  Patient benefits from established baseline monitoring. Review glycemic trajectory to guide discharge medication titration.
+                {% endif %}
+              </p>
+            </div>
+
+            <div class="row g-3">
+              <div class="col-6">
+                <div class="dc-mini">
+                  <div class="l">Test Cohort Readmission Rate</div>
+                  <div class="v">{{ (result.rate * 100)|round(1) }}%</div>
+                  <div class="l">({{ (result.rate / result.base_rate)|round(1) }}x average)</div>
+                </div>
+              </div>
+              <div class="col-6">
+                <div class="dc-mini">
+                  <div class="l">Cohort Patient Share</div>
+                  <div class="v">{{ (result.share * 100)|round(0)|int }}%</div>
+                  <div class="l">of diabetic inpatients</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Short Interpretation of Results (Below Results) -->
+        <div class="dc-interp">
+          <div class="dc-interp-t"><i class="bi bi-info-circle-fill"></i>Clinical Interpretation:</div>
+          <p>
+            {% if result.row.a1c_tested == 'No' %}
+              Inpatient HbA1c is <strong>not performed</strong> for this stay. The patient's 30-day readmission risk is evaluated at <strong>{{ p_pct }}% ({{ band|title }} Risk)</strong>. Performing an inpatient HbA1c provides a verified ~9.6% reduction in readmission odds (OR 0.904). <strong>Order an inpatient HbA1c prior to discharge</strong> to establish a baseline for outpatient titration.
+            {% else %}
+              Inpatient HbA1c was <strong>measured during this stay</strong>, providing a verified baseline for diabetes management. Estimated readmission risk is <strong>{{ p_pct }}% ({{ band|title }} Risk)</strong>. Continue following outpatient glycemic care recommendations.
+            {% endif %}
+          </p>
+        </div>
+
+        <!-- Factors Explaining Score -->
+        <div class="mt-4 pt-4" style="border-top: 1px dashed var(--dc-line);">
+          <div class="dc-res-h" style="margin-bottom: 6px;">
+            <span><i class="bi bi-list-check"></i>Main Contributing Factors (Odds Ratio Perspective)</span>
+          </div>
+          <p class="small mb-3" style="color: var(--dc-muted);">Attribution identifies parameters driving higher risk (red) or conferring protective association (green).</p>
+
+          <div class="row g-3">
+            {% for f in result.factors %}
+            <div class="col-md-6">
+              <div class="dc-factor">
+                <div>
+                  <div class="fw-bold" style="color: var(--dc-ink);">{{ f.field }}</div>
+                  <div class="small" style="color: var(--dc-muted);">Patient value: <span class="badge bg-white text-dark border">{{ f.value }}</span></div>
+                </div>
+                <div class="text-end">
+                  <span class="badge {% if f.effect > 0 %}bg-danger-subtle text-danger{% else %}bg-success-subtle text-success{% endif %} fs-6 px-2 py-1">
+                    {% if f.effect > 0 %}+{{ f.effect }}{% else %}{{ f.effect }}{% endif %}
+                  </span>
+                  <div class="small" style="color: var(--dc-muted);">{% if f.effect > 0 %}Increases risk{% else %}Protective{% endif %}</div>
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+            {% if not result.factors %}
+            <div class="col-12 small" style="color: var(--dc-muted);">Parameters align with average baseline inpatient profile.</div>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Advisory Banner -->
+        <div class="dc-advisory">
+          <i class="bi bi-info-circle-fill"></i>
+          <div>
+            <strong>Decision Support Advisory:</strong> DiaCare models assist clinical prioritization and transitional care allocation. They do not constitute diagnostic or prescriptive orders. Always consider the full clinical context.
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- INPUT FORM CARD -->
+    <div class="dc-tool-card">
+      <div class="dc-tool-card-head">
+        <div>
+          <h2 class="dc-tool-card-title">Patient Clinical Profile &amp; Lab Metrics</h2>
+          <p class="dc-tool-card-sub">Fill in patient data or load representative example.</p>
+        </div>
+      </div>
+
+      <div class="dc-tool-sample justify-content-end mb-4">
+        <span>Try sample:</span>
+        <button type="button" class="dc-tool-sbtn ok" data-example='{{ examples.lower|tojson|forceescape }}'>
+          Lower-Risk Patient
+        </button>
+        <button type="button" class="dc-tool-sbtn danger" data-example='{{ examples.higher|tojson|forceescape }}'>
+          Higher-Risk Patient
+        </button>
+      </div>
+
+      <form id="hba1cForm" method="post" action="{{ url_for('clinical.hba1c_single') }}">
+
+        <!-- Section 1: Demographics & Admission -->
+        <h6 class="dc-tool-sec">1. Demographics &amp; Stay Characteristics</h6>
+        <div class="row g-3 mb-4">
+          <div class="col-md-6 col-lg-3">
+            <label class="form-label" for="age">Age Group</label>
+            <select class="form-select" id="age" name="age">
+              {% for val, txt in ages %}
+              <option value="{{ val }}" {% if d.age|string == val|string %}selected{% endif %}>{{ txt }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="col-md-6 col-lg-3">
+            <label class="form-label" for="gender">Gender</label>
+            <select class="form-select" id="gender" name="gender">
+              {% for val, txt in gender %}
+              <option value="{{ val }}" {% if d.gender == val %}selected{% endif %}>{{ txt }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="col-md-6 col-lg-3">
+            <label class="form-label" for="race">Race / Ethnicity</label>
+            <select class="form-select" id="race" name="race">
+              {% for val, txt in race %}
+              <option value="{{ val }}" {% if d.race == val %}selected{% endif %}>{{ txt }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="col-md-6 col-lg-3">
+            <label class="form-label" for="diag_1">Primary Diagnosis</label>
+            <select class="form-select" id="diag_1" name="diag_1">
+              {% for val, txt in diag %}
+              <option value="{{ val }}" {% if d.diag_1 == val %}selected{% endif %}>{{ txt }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="col-md-6 col-lg-4">
+            <label class="form-label" for="admission">Admission Type</label>
+            <select class="form-select" id="admission" name="admission">
+              {% for val, txt in admission %}
+              <option value="{{ val }}" {% if d.admission|string == val|string %}selected{% endif %}>{{ txt }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="col-md-6 col-lg-4">
+            <label class="form-label" for="source">Admission Source</label>
+            <select class="form-select" id="source" name="source">
+              {% for val, txt in source %}
+              <option value="{{ val }}" {% if d.source|string == val|string %}selected{% endif %}>{{ txt }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="col-md-6 col-lg-4">
+            <label class="form-label" for="discharge">Discharge Destination</label>
+            <select class="form-select" id="discharge" name="discharge">
+              {% for val, txt in discharge %}
+              <option value="{{ val }}" {% if d.discharge|string == val|string %}selected{% endif %}>{{ txt }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="col-md-6 col-lg-3">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <label class="form-label mb-0" for="time_in_hospital">Length of Stay</label>
+              <span class="dc-val" id="time_in_hospital_v">{{ d.time_in_hospital }} days</span>
+            </div>
+            <input type="range" class="form-range" id="time_in_hospital" name="time_in_hospital" min="{{ limits.time_in_hospital[0] }}" max="{{ limits.time_in_hospital[1] }}" value="{{ d.time_in_hospital }}">
+          </div>
+
+          <div class="col-md-6 col-lg-3">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <label class="form-label mb-0" for="number_diagnoses">Total Diagnoses</label>
+              <span class="dc-val" id="number_diagnoses_v">{{ d.number_diagnoses }}</span>
+            </div>
+            <input type="range" class="form-range" id="number_diagnoses" name="number_diagnoses" min="{{ limits.number_diagnoses[0] }}" max="{{ limits.number_diagnoses[1] }}" value="{{ d.number_diagnoses }}">
+          </div>
+
+          <div class="col-md-6 col-lg-3">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <label class="form-label mb-0" for="num_lab_procedures">Lab Tests</label>
+              <span class="dc-val" id="num_lab_procedures_v">{{ d.num_lab_procedures }}</span>
+            </div>
+            <input type="range" class="form-range" id="num_lab_procedures" name="num_lab_procedures" min="{{ limits.num_lab_procedures[0] }}" max="{{ limits.num_lab_procedures[1] }}" value="{{ d.num_lab_procedures }}">
+          </div>
+
+          <div class="col-md-6 col-lg-3">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <label class="form-label mb-0" for="num_procedures">Procedures</label>
+              <span class="dc-val" id="num_procedures_v">{{ d.num_procedures }}</span>
+            </div>
+            <input type="range" class="form-range" id="num_procedures" name="num_procedures" min="{{ limits.num_procedures[0] }}" max="{{ limits.num_procedures[1] }}" value="{{ d.num_procedures }}">
+          </div>
+        </div>
+
+        <!-- Section 2: Hospital History -->
+        <h6 class="dc-tool-sec">2. Hospital History (Past 12 Months)</h6>
+        <div class="row g-3 mb-4">
+          <div class="col-md-4">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <label class="form-label mb-0" for="number_inpatient">Inpatient Stays</label>
+              <span class="dc-val" id="number_inpatient_v">{{ d.number_inpatient }}</span>
+            </div>
+            <input type="range" class="form-range" id="number_inpatient" name="number_inpatient" min="{{ limits.number_inpatient[0] }}" max="{{ limits.number_inpatient[1] }}" value="{{ d.number_inpatient }}">
+          </div>
+
+          <div class="col-md-4">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <label class="form-label mb-0" for="number_emergency">Emergency Visits</label>
+              <span class="dc-val" id="number_emergency_v">{{ d.number_emergency }}</span>
+            </div>
+            <input type="range" class="form-range" id="number_emergency" name="number_emergency" min="{{ limits.number_emergency[0] }}" max="{{ limits.number_emergency[1] }}" value="{{ d.number_emergency }}">
+          </div>
+
+          <div class="col-md-4">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <label class="form-label mb-0" for="number_outpatient">Outpatient Visits</label>
+              <span class="dc-val" id="number_outpatient_v">{{ d.number_outpatient }}</span>
+            </div>
+            <input type="range" class="form-range" id="number_outpatient" name="number_outpatient" min="{{ limits.number_outpatient[0] }}" max="{{ limits.number_outpatient[1] }}" value="{{ d.number_outpatient }}">
+          </div>
+        </div>
+
+        <!-- Section 3: Medication & Lab Tests -->
+        <h6 class="dc-tool-sec">3. Diabetes Treatment &amp; Glycemic Tests</h6>
+        <div class="row g-3 mb-4">
+          <div class="col-md-4">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <label class="form-label mb-0" for="num_medications">Total Medications</label>
+              <span class="dc-val" id="num_medications_v">{{ d.num_medications }}</span>
+            </div>
+            <input type="range" class="form-range" id="num_medications" name="num_medications" min="{{ limits.num_medications[0] }}" max="{{ limits.num_medications[1] }}" value="{{ d.num_medications }}">
+          </div>
+
+          <div class="col-md-4">
+            <label class="form-label" for="insulin">Insulin Regimen</label>
+            <select class="form-select" id="insulin" name="insulin">
+              {% for val, txt in insulin %}
+              <option value="{{ val }}" {% if d.insulin == val %}selected{% endif %}>{{ txt }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="col-md-4">
+            <label class="form-label" for="a1c_tested" style="color: var(--dc-mid);"><i class="bi bi-star-fill text-warning me-1"></i>HbA1c Measured During Stay?</label>
+            <select class="form-select" id="a1c_tested" name="a1c_tested" style="border-color: var(--dc-mid);">
+              {% for val, txt in yesno %}
+              <option value="{{ val }}" {% if d.a1c_tested == val %}selected{% endif %}>{{ txt }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="col-md-4">
+            <label class="form-label" for="glu_tested">Glucose Serum Measured?</label>
+            <select class="form-select" id="glu_tested" name="glu_tested">
+              {% for val, txt in yesno %}
+              <option value="{{ val }}" {% if d.glu_tested == val %}selected{% endif %}>{{ txt }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="col-md-4">
+            <label class="form-label" for="change">Medication Changed During Stay</label>
+            <select class="form-select" id="change" name="change">
+              {% for val, txt in yesno %}
+              <option value="{{ val }}" {% if d.change == val %}selected{% endif %}>{{ txt }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="col-md-4">
+            <label class="form-label" for="diabetesMed">Diabetes Medication Prescribed</label>
+            <select class="form-select" id="diabetesMed" name="diabetesMed">
+              {% for val, txt in yesno %}
+              <option value="{{ val }}" {% if d.diabetesMed == val %}selected{% endif %}>{{ txt }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <div class="dc-tool-actions">
+          <button type="submit" class="dc-btn-go" id="submitBtn">
+            <i class="bi bi-calculator"></i>Evaluate Glycemic &amp; Readmission Risk
+          </button>
+          <a href="{{ url_for('clinical.hba1c_single') }}" class="dc-btn-reset">
+            <i class="bi bi-arrow-counterclockwise"></i>Reset Form
+          </a>
+        </div>
+      </form>
+    </div>
+
+  </div>
+</section>
+
+</div>
+
+<script>
+document.querySelectorAll('input[type=range]').forEach(function(slider) {
+  var out = document.getElementById(slider.id + '_v');
+  var sync = function() {
+    if (out) {
+      if (slider.id === 'time_in_hospital') {
+        out.textContent = slider.value + ' days';
+      } else {
+        out.textContent = slider.value;
+      }
+    }
+  };
+  slider.addEventListener('input', sync);
+  sync();
+});
+
+document.querySelectorAll('[data-example]').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    var ex = JSON.parse(btn.getAttribute('data-example'));
+    Object.keys(ex).forEach(function(k) {
+      var el = document.getElementById(k);
+      if (el) {
+        el.value = ex[k];
+        el.dispatchEvent(new Event('input'));
+      }
+    });
+  });
+});
+</script>
+
+{% endblock %}

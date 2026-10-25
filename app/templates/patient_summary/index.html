@@ -1,0 +1,1153 @@
+{% extends "base.html" %}
+
+{% block title %}Unified Patient Report — DiaCare Analytics{% endblock %}
+
+{% block extra_head %}
+<style>
+  /* ============================================================
+     DiaCare Analytics — Unified Patient Report (styles scopés : .dc-rep / dc-rep-*)
+     ============================================================ */
+  .dc-rep {
+    --dc-blue: var(--accent-color, #1a5fd8);
+    --dc-navy: #0b2a6f;
+    --dc-mid: #1558d6;
+    --dc-light: #3b8bff;
+    --dc-ink: #0f1f3d;
+    --dc-muted: #64748b;
+    --dc-line: #e3e9f3;
+    overflow: hidden;
+  }
+
+  /* ---------- Hero ---------- */
+  .dc-rep-hero { padding: 36px 0 14px; }
+  .dc-rep-hero-card {
+    position: relative; display: grid; grid-template-columns: 1.15fr 1fr; align-items: center; gap: 24px;
+    padding: 44px; background: #fff; border-radius: 28px; overflow: hidden;
+    box-shadow: 0 30px 60px -28px rgba(11,42,111,.35), 0 6px 20px rgba(11,42,111,.06);
+  }
+  .dc-rep-hero-card::before {
+    content: ""; position: absolute; width: 380px; height: 380px; top: -170px; left: -120px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(59,139,255,.22), transparent 70%);
+  }
+  .dc-rep-hero-card::after {
+    content: ""; position: absolute; width: 300px; height: 300px; bottom: -150px; right: 28%; border-radius: 50%;
+    background: radial-gradient(circle, rgba(21,88,214,.14), transparent 70%);
+  }
+  .dc-rep-hero-text, .dc-rep-hero-media { position: relative; z-index: 2; }
+  .dc-rep-pill {
+    display: inline-flex; align-items: center; gap: 8px; padding: 7px 16px; margin-bottom: 18px;
+    border-radius: 999px; background: #e8f0ff; color: var(--dc-blue); font-weight: 700; font-size: .85rem;
+  }
+  .dc-rep-pill i { animation: dcRepBeat 2.2s ease-in-out infinite; }
+  .dc-rep-title {
+    font-family: "Montserrat", sans-serif; font-weight: 800; font-size: clamp(1.9rem, 3.4vw, 2.7rem);
+    line-height: 1.12; margin: 0 0 14px;
+    background: linear-gradient(120deg, var(--dc-navy), var(--dc-mid) 60%, var(--dc-light));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .dc-rep-desc { margin: 0; color: var(--dc-muted); font-size: .98rem; line-height: 1.7; max-width: 580px; }
+  .dc-rep-hero-media { padding: 14px; }
+  .dc-rep-hero-media::before {
+    content: ""; position: absolute; inset: 0; border-radius: 26px; transform: rotate(3deg); opacity: .9;
+    background: linear-gradient(135deg, var(--dc-light), var(--dc-navy));
+  }
+  .dc-rep-hero-media img {
+    position: relative; display: block; width: 100%; height: 250px; object-fit: cover; border-radius: 20px;
+    border: 4px solid #fff; box-shadow: 0 18px 36px -14px rgba(11,42,111,.55); transition: transform .4s ease;
+  }
+  .dc-rep-hero-media:hover img { transform: scale(1.02) rotate(-.6deg); }
+
+  /* ---------- Quick Load ---------- */
+  .dc-rep-quick {
+    display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px;
+    padding: 16px 22px; margin-bottom: 26px; background: #fff; border-radius: 20px;
+    border: 1px solid var(--dc-line); box-shadow: 0 14px 30px -20px rgba(11,42,111,.4);
+  }
+  .dc-rep-quick-info { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .dc-rep-quick-ico {
+    width: 40px; height: 40px; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 1.1rem; background: linear-gradient(135deg, var(--dc-mid), var(--dc-light));
+    box-shadow: 0 8px 16px -8px rgba(21,88,214,.7);
+  }
+  .dc-rep-quick-text strong { color: var(--dc-ink); font-size: .92rem; }
+  .dc-rep-quick-text span { color: var(--dc-muted); font-size: .86rem; margin-left: 4px; }
+  .dc-rep-chips { display: flex; flex-wrap: wrap; gap: 10px; }
+  .dc-rep-chip {
+    display: inline-flex; align-items: center; gap: 7px; padding: 9px 18px; border-radius: 999px;
+    font-size: .86rem; font-weight: 700; background: #fff; cursor: pointer; transition: all .2s ease;
+  }
+  .dc-rep-chip.routine { border: 1.5px solid var(--dc-mid); color: var(--dc-mid); }
+  .dc-rep-chip.routine:hover { background: var(--dc-mid); color: #fff; transform: translateY(-2px); box-shadow: 0 10px 18px -8px rgba(21,88,214,.7); }
+  .dc-rep-chip.complex { border: 1.5px solid #e0483f; color: #e0483f; }
+  .dc-rep-chip.complex:hover { background: #e0483f; color: #fff; transform: translateY(-2px); box-shadow: 0 10px 18px -8px rgba(224,72,63,.7); }
+
+  /* ---------- Sections du formulaire ---------- */
+  .dc-rep-form-wrap { padding: 8px 0 20px; }
+  .dc-rep-card {
+    --c: var(--dc-mid);
+    position: relative; margin-bottom: 24px; padding: 28px 30px 30px; background: #fff; border-radius: 22px; overflow: hidden;
+    box-shadow: 0 16px 34px -22px rgba(11,42,111,.45); transition: box-shadow .3s ease, transform .3s ease;
+  }
+  .dc-rep-card::before { content: ""; position: absolute; left: 0; top: 0; height: 100%; width: 6px; background: var(--c); }
+  .dc-rep-card:hover { box-shadow: 0 26px 44px -22px rgba(11,42,111,.5); transform: translateY(-2px); }
+  .dc-rep-sec-head {
+    display: flex; align-items: center; gap: 14px; margin-bottom: 22px; padding-bottom: 16px; border-bottom: 1px dashed var(--dc-line);
+  }
+  .dc-rep-sec-ico {
+    flex-shrink: 0; width: 50px; height: 50px; border-radius: 15px; display: inline-flex; align-items: center; justify-content: center;
+    font-size: 1.4rem; color: #fff; background: linear-gradient(135deg, var(--c), color-mix(in srgb, var(--c), #fff 35%));
+    box-shadow: 0 10px 18px -8px var(--c);
+  }
+  .dc-rep-sec-title { margin: 0; font-family: "Montserrat", sans-serif; font-weight: 800; font-size: 1.2rem; color: var(--dc-ink); }
+  .dc-rep-sec-sub { margin: 2px 0 0; font-size: .86rem; color: var(--dc-muted); }
+
+  /* Champs (portée limitée à .dc-rep) */
+  .dc-rep .form-label { margin-bottom: 6px; font-size: .82rem; font-weight: 700; color: var(--dc-ink); }
+  .dc-rep .form-control, .dc-rep .form-select {
+    padding-top: .6rem; padding-bottom: .6rem; padding-left: .9rem; font-size: .92rem; color: var(--dc-ink);
+    background-color: #f4f7fc; border: 1.5px solid transparent; border-radius: 12px;
+    transition: border-color .2s ease, box-shadow .2s ease, background-color .2s ease;
+  }
+  .dc-rep .form-select { padding-right: 2.25rem; }
+  .dc-rep .form-control::placeholder { color: #a3afc0; }
+  .dc-rep .form-control:hover, .dc-rep .form-select:hover { background-color: #edf2fa; }
+  .dc-rep .form-control:focus, .dc-rep .form-select:focus {
+    background-color: #fff; border-color: var(--c, var(--dc-mid));
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--c, var(--dc-mid)), transparent 86%);
+  }
+  .dc-rep .form-text { margin-top: 5px; font-size: .76rem; color: var(--dc-muted); }
+
+  /* Boutons d'action */
+  .dc-rep-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 16px; padding: 14px 0 26px; }
+  .dc-rep-btn-run {
+    display: inline-flex; align-items: center; gap: 10px; padding: 16px 40px; border: 0; border-radius: 16px;
+    font-size: 1.05rem; font-weight: 800; color: #fff; cursor: pointer;
+    background: linear-gradient(135deg, var(--dc-mid), var(--dc-light));
+    box-shadow: 0 18px 30px -12px rgba(21,88,214,.75); transition: transform .2s ease, box-shadow .2s ease, filter .2s ease;
+  }
+  .dc-rep-btn-run:hover { transform: translateY(-3px); filter: brightness(1.06); box-shadow: 0 24px 36px -12px rgba(21,88,214,.85); }
+  .dc-rep-btn-run:active { transform: translateY(0); }
+  .dc-rep-btn-reset {
+    display: inline-flex; align-items: center; gap: 8px; padding: 16px 28px; border-radius: 16px; background: #fff;
+    border: 1.5px solid #c4d2e8; color: #4d5c72; font-weight: 700; font-size: 1rem; text-decoration: none; transition: all .2s ease;
+  }
+  .dc-rep-btn-reset:hover { color: var(--dc-blue); border-color: var(--dc-blue); transform: translateY(-3px); }
+
+  /* ---------- Résultats ---------- */
+  .dc-rep-results {
+    position: relative; padding: 50px 0 70px; scroll-margin-top: 100px;
+    background: linear-gradient(180deg, #f3f8ff 0%, #e3edfc 100%);
+  }
+  .dc-rep-results::before {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background-image: radial-gradient(rgba(21,88,214,.10) 1.4px, transparent 1.4px); background-size: 26px 26px;
+    -webkit-mask-image: linear-gradient(180deg, #000, transparent 65%); mask-image: linear-gradient(180deg, #000, transparent 65%);
+  }
+  .dc-rep-results .container { position: relative; z-index: 2; }
+
+  .dc-rep-res-head {
+    position: relative; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px;
+    padding: 30px 34px; margin-bottom: 34px; border-radius: 26px; color: #fff; overflow: hidden;
+    background: linear-gradient(125deg, var(--dc-navy) 0%, var(--dc-mid) 58%, var(--dc-light) 100%);
+    box-shadow: 0 30px 56px -26px rgba(11,42,111,.7);
+  }
+  .dc-rep-res-head::before {
+    content: ""; position: absolute; width: 300px; height: 300px; top: -140px; right: -70px; border-radius: 50%; background: rgba(255,255,255,.1);
+  }
+  .dc-rep-res-head > * { position: relative; z-index: 2; }
+  .dc-rep-res-badge {
+    display: inline-flex; align-items: center; gap: 7px; padding: 6px 14px; margin-bottom: 8px; border-radius: 999px;
+    background: rgba(255,255,255,.18); border: 1px solid rgba(255,255,255,.3); font-size: .78rem; font-weight: 700; color: #fff;
+  }
+  .dc-rep-res-title { margin: 0; font-family: "Montserrat", sans-serif; font-weight: 800; font-size: 1.6rem; color: #fff; }
+  .dc-rep-res-btns { display: flex; flex-wrap: wrap; gap: 10px; }
+  .dc-rep-rbtn {
+    display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; border-radius: 12px; font-size: .9rem; font-weight: 700;
+    text-decoration: none; cursor: pointer; transition: all .2s ease;
+  }
+  .dc-rep-rbtn.ghost { background: transparent; color: #fff; border: 1.5px solid rgba(255,255,255,.5); }
+  .dc-rep-rbtn.ghost:hover { background: #fff; color: var(--dc-navy); }
+  .dc-rep-rbtn.solid { background: #fff; color: var(--dc-navy); border: 1.5px solid #fff; box-shadow: 0 10px 18px -8px rgba(0,0,0,.4); }
+  .dc-rep-rbtn.solid:hover { color: var(--dc-mid); transform: translateY(-2px); }
+
+  .dc-rep-h {
+    display: flex; align-items: center; gap: 12px; margin: 0 0 18px;
+    font-family: "Montserrat", sans-serif; font-weight: 800; font-size: 1.35rem; color: var(--dc-ink);
+  }
+  .dc-rep-h i {
+    width: 40px; height: 40px; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center;
+    font-size: 1.15rem; color: #fff; background: linear-gradient(135deg, var(--dc-mid), var(--dc-light));
+    box-shadow: 0 8px 16px -8px rgba(21,88,214,.7);
+  }
+
+  /* Alertes de guidance */
+  .dc-rep-alert {
+    display: flex; align-items: flex-start; gap: 14px; padding: 16px 20px; margin-bottom: 14px;
+    border-radius: 16px; border: 1px solid; border-left-width: 6px; box-shadow: 0 12px 24px -18px rgba(11,42,111,.5);
+  }
+  .dc-rep-alert-ico {
+    flex-shrink: 0; width: 42px; height: 42px; border-radius: 50%; background: rgba(255,255,255,.75);
+    display: inline-flex; align-items: center; justify-content: center; font-size: 1.3rem;
+  }
+  .dc-rep-alert strong { font-size: 1rem; }
+  .dc-rep-alert p { margin: 4px 0 0; font-size: .88rem; line-height: 1.55; }
+  .dc-rep-alert-info    { background: #e6f6ff; border-color: #0ea5e9; color: #064e73; }
+  .dc-rep-alert-primary { background: #e8f0ff; border-color: #1558d6; color: #0b2a6f; }
+  .dc-rep-alert-warning { background: #fff7e6; border-color: #f59e0b; color: #7a4a00; }
+  .dc-rep-alert-danger  { background: #fff0f0; border-color: #ef4444; color: #8a1c1c; }
+  .dc-rep-alert-success { background: #e6f7f8; border-color: #0e9aa7; color: #0a5560; }
+  .dc-rep-alert-secondary, .dc-rep-alert-light, .dc-rep-alert-dark { background: #eef2f8; border-color: #8493a8; color: #2c3a50; }
+
+  /* Cartes de résultats */
+  .dc-rep-rcard {
+    --c: var(--dc-mid);
+    position: relative; height: 100%; display: flex; flex-direction: column; background: #fff; border-radius: 22px; overflow: hidden;
+    box-shadow: 0 16px 34px -20px rgba(11,42,111,.45); transition: transform .3s ease, box-shadow .3s ease;
+  }
+  .dc-rep-rcard::before { content: ""; position: absolute; left: 0; top: 0; width: 100%; height: 6px; background: var(--c); }
+  .dc-rep-rcard:hover { transform: translateY(-6px); box-shadow: 0 28px 44px -20px rgba(11,42,111,.55); }
+  .dc-rep-rbody { flex: 1; display: flex; flex-direction: column; padding: 30px 24px 22px; }
+  .dc-rep-rhead { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+  .dc-rep-rico {
+    flex-shrink: 0; width: 48px; height: 48px; border-radius: 15px; display: inline-flex; align-items: center; justify-content: center;
+    font-size: 1.35rem; color: #fff; background: linear-gradient(135deg, var(--c), color-mix(in srgb, var(--c), #fff 35%));
+    box-shadow: 0 10px 18px -8px var(--c); transition: transform .3s ease;
+  }
+  .dc-rep-rcard:hover .dc-rep-rico { transform: rotate(-8deg) scale(1.08); }
+  .dc-rep-rhead h3 { margin: 0; font-family: "Montserrat", sans-serif; font-weight: 800; font-size: 1.05rem; color: var(--dc-ink); }
+  .dc-rep-rhead small { color: var(--dc-muted); font-size: .8rem; }
+  .dc-rep .progress { background-color: #e6edf7; }
+  .dc-rep-interp {
+    padding: 10px 12px; border-radius: 12px; font-size: .82rem; line-height: 1.55; color: #475569;
+    background: #f4f7fc; border: 1px solid var(--dc-line); border-left: 4px solid var(--c);
+  }
+  .dc-rep-open {
+    display: block; text-align: center; padding: 10px 12px; border-radius: 12px; font-size: .86rem; font-weight: 700;
+    color: var(--c); border: 1.5px solid var(--c); text-decoration: none; transition: all .2s ease;
+  }
+  .dc-rep-open:hover { background: var(--c); color: #fff; transform: translateY(-2px); box-shadow: 0 10px 18px -8px var(--c); }
+
+  /* Bandeau d'avertissement */
+  .dc-rep-advisory {
+    display: flex; align-items: center; gap: 16px; margin-top: 34px; padding: 18px 22px; border-radius: 18px;
+    background: #fff; border: 1px solid #cfe0fb; border-left: 6px solid var(--dc-mid);
+    box-shadow: 0 14px 28px -20px rgba(11,42,111,.5);
+  }
+  .dc-rep-advisory > i { flex-shrink: 0; font-size: 1.9rem; color: var(--dc-mid); }
+  .dc-rep-advisory div { font-size: .88rem; color: var(--dc-ink); line-height: 1.6; }
+
+  /* ---------- Animations ---------- */
+  @keyframes dcRepBeat { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.22); } }
+  @media (prefers-reduced-motion: reduce) {
+    .dc-rep-pill i { animation: none !important; }
+    .dc-rep * { transition: none !important; }
+  }
+
+  /* ---------- Responsive ---------- */
+  @media (max-width: 991.98px) {
+    .dc-rep-hero-card { grid-template-columns: 1fr; padding: 32px 26px; }
+    .dc-rep-hero-media img { height: 220px; }
+  }
+  @media (max-width: 575.98px) {
+    .dc-rep-hero { padding-top: 20px; }
+    .dc-rep-hero-card { border-radius: 22px; padding: 26px 20px; }
+    .dc-rep-card { padding: 22px 18px 24px; border-radius: 18px; }
+    .dc-rep-res-head { padding: 24px 20px; border-radius: 20px; }
+    .dc-rep-btn-run, .dc-rep-btn-reset { width: 100%; justify-content: center; }
+    .dc-rep-results { padding: 36px 0 50px; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dc-rep">
+
+{# ── Hero Banner ─────────────────────────────────────────────────────────── #}
+<section class="dc-rep-hero">
+  <div class="container" data-aos="fade-up">
+    <div class="dc-rep-hero-card">
+      <div class="dc-rep-hero-text">
+        <div class="dc-rep-pill">
+          <i class="bi bi-file-earmark-person"></i> Master Evaluation
+        </div>
+        <h1 class="dc-rep-title">Unified Patient Report</h1>
+        <p class="dc-rep-desc">
+          Enter a patient's complete inpatient record once to generate a comprehensive multi-model report
+          across all applicable predictive tools — Length of Stay, Discharge Destination,
+          Medication Load{% if current_user.role == 'doctor' %}, Readmission Risk, HbA1c Decision, and Patient Profile{% endif %}
+          — alongside cross-model clinical advisory rules.
+        </p>
+      </div>
+      <div class="dc-rep-hero-media">
+        <img src="{{ url_for('static', filename='img/health/consultation-4.webp') }}" alt="Patient Consultation">
+      </div>
+    </div>
+  </div>
+</section>
+
+{# ── INPUT FORM ──────────────────────────────────────────────────────────── #}
+<section class="dc-rep-form-wrap">
+  <div class="container" data-aos="fade-up">
+
+    <!-- Sample Profile Loader Bar -->
+    <div class="dc-rep-quick">
+      <div class="dc-rep-quick-info">
+        <span class="dc-rep-quick-ico"><i class="bi bi-lightning-charge-fill"></i></span>
+        <div class="dc-rep-quick-text">
+          <strong>Quick Load Sample Patient:</strong>
+          <span>Pre-populate form with representative hospital stay data</span>
+        </div>
+      </div>
+      <div class="dc-rep-chips">
+        <button type="button" class="dc-rep-chip routine" id="btnSampleRoutine">
+          <i class="bi bi-person-check"></i>Routine Inpatient (Lower Risk)
+        </button>
+        <button type="button" class="dc-rep-chip complex" id="btnSampleComplex">
+          <i class="bi bi-person-exclamation"></i>Complex Inpatient (Higher Risk)
+        </button>
+      </div>
+    </div>
+
+    <form id="summaryForm" method="POST" action="{{ url_for('main.patient_summary') }}">
+
+      {# ─── Section A: Demographics ──────────────────────────────────────── #}
+      <div class="dc-rep-card" style="--c:#1558d6;">
+        <div class="dc-rep-sec-head">
+          <span class="dc-rep-sec-ico"><i class="bi bi-person-badge"></i></span>
+          <div>
+            <h2 class="dc-rep-sec-title">Demographics</h2>
+            <p class="dc-rep-sec-sub">Patient identity and background.</p>
+          </div>
+        </div>
+        <div class="row g-3">
+
+          {# Age group (Seif / Ons) #}
+          <div class="col-md-4">
+            <label class="form-label">Age Group <span class="text-danger">*</span></label>
+            <select name="age" class="form-select form-select-sm">
+              {% for idx, label in age_groups %}
+                <option value="{{ idx }}" {% if d.get('age', 7)|int == idx %}selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          {# Numeric age (Dhie / Moez) #}
+          <div class="col-md-4">
+            <label class="form-label">Approximate Age — years <span class="text-danger">*</span></label>
+            <input type="number" name="age_num" class="form-control form-control-sm"
+                   min="5" max="95" value="{{ d.get('age_num', 65) }}">
+            <div class="form-text">Used by Discharge &amp; Profile models.</div>
+          </div>
+
+          {# Gender #}
+          <div class="col-md-4">
+            <label class="form-label">Gender</label>
+            <select name="gender" class="form-select form-select-sm">
+              {% for g in genders %}
+                <option value="{{ g }}" {% if d.get('gender', 'Female') == g %}selected{% endif %}>{{ g }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          {# Race #}
+          <div class="col-md-4">
+            <label class="form-label">Race / Ethnicity</label>
+            <select name="race" class="form-select form-select-sm">
+              {% for val, label in races %}
+                <option value="{{ val }}" {% if d.get('race', 'Caucasian') == val %}selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          {# Payer #}
+          <div class="col-md-4">
+            <label class="form-label">Insurance / Payer</label>
+            <select name="payer_code" class="form-select form-select-sm">
+              {% for p in payers %}
+                <option value="{{ p }}" {% if d.get('payer_code', 'MC') == p %}selected{% endif %}>{{ p }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          {# Medical specialty #}
+          <div class="col-md-4">
+            <label class="form-label">Medical Specialty</label>
+            <select name="medical_specialty" class="form-select form-select-sm">
+              {% for sp in specialties %}
+                <option value="{{ sp }}" {% if d.get('medical_specialty', 'InternalMedicine') == sp %}selected{% endif %}>{{ sp }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+        </div>
+      </div>
+
+      {# ─── Section B: Admission ─────────────────────────────────────────── #}
+      <div class="dc-rep-card" style="--c:#0e9aa7;">
+        <div class="dc-rep-sec-head">
+          <span class="dc-rep-sec-ico"><i class="bi bi-door-open"></i></span>
+          <div>
+            <h2 class="dc-rep-sec-title">Admission Details</h2>
+            <p class="dc-rep-sec-sub">How and why the patient was admitted.</p>
+          </div>
+        </div>
+        <div class="row g-3">
+
+          {# Admission type #}
+          <div class="col-md-4">
+            <label class="form-label">Admission Type</label>
+            <select name="admission_type_id" class="form-select form-select-sm">
+              {% for val, label in adm_types %}
+                <option value="{{ val }}" {% if d.get('admission_type_id', 1)|int == val %}selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          {# Admission source #}
+          <div class="col-md-4">
+            <label class="form-label">Admission Source</label>
+            <select name="admission_source_id" class="form-select form-select-sm">
+              {% for val, label in adm_srcs %}
+                <option value="{{ val }}" {% if d.get('admission_source_id', 7)|int == val %}selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          {# Discharge destination (numeric ID, for Dhie/Moez/Ons) #}
+          <div class="col-md-4">
+            <label class="form-label">Discharge Destination</label>
+            <select name="discharge_disposition_id" class="form-select form-select-sm">
+              {% for val, label in discharge_opts %}
+                <option value="{{ val }}" {% if d.get('discharge_disposition_id', 1)|int == val %}selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          {# Seif discharge (text-based) #}
+          <div class="col-md-6">
+            <label class="form-label">Discharge Destination (Readmission model)</label>
+            <select name="discharge_seif" class="form-select form-select-sm">
+              {% for opt in seif_discharge %}
+                <option value="{{ opt }}" {% if d.get('discharge_seif', 'Home') == opt %}selected{% endif %}>{{ opt }}</option>
+              {% endfor %}
+            </select>
+            <div class="form-text">Used by Readmission Screening model (Seif).</div>
+          </div>
+
+          {# Seif admission (text-based) #}
+          <div class="col-md-6">
+            <label class="form-label">Admission Type (Readmission model)</label>
+            <select name="admission_seif" class="form-select form-select-sm">
+              {% for opt in seif_admission %}
+                <option value="{{ opt }}" {% if d.get('admission_seif', 'Emergency') == opt %}selected{% endif %}>{{ opt }}</option>
+              {% endfor %}
+            </select>
+            <div class="form-text">Used by Readmission Screening model (Seif).</div>
+          </div>
+
+          {# Prior stays (Dhie) #}
+          <div class="col-md-4">
+            <label class="form-label">Prior Stays (this patient)</label>
+            <input type="number" name="sejours_anterieurs" class="form-control form-control-sm"
+                   min="0" max="50" value="{{ d.get('sejours_anterieurs', 0) }}">
+          </div>
+
+        </div>
+      </div>
+
+      {# ─── Section C: Utilisation Metrics ──────────────────────────────── #}
+      <div class="dc-rep-card" style="--c:#4f46e5;">
+        <div class="dc-rep-sec-head">
+          <span class="dc-rep-sec-ico"><i class="bi bi-bar-chart-line"></i></span>
+          <div>
+            <h2 class="dc-rep-sec-title">Utilisation Metrics</h2>
+            <p class="dc-rep-sec-sub">Quantitative data about this hospitalisation and history.</p>
+          </div>
+        </div>
+        <div class="row g-3">
+          <div class="col-md-3">
+            <label class="form-label">Length of Stay (days)</label>
+            <input type="number" name="time_in_hospital" class="form-control form-control-sm"
+                   min="1" max="14" value="{{ d.get('time_in_hospital', 4) }}">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Lab Procedures</label>
+            <input type="number" name="num_lab_procedures" class="form-control form-control-sm"
+                   min="1" max="132" value="{{ d.get('num_lab_procedures', 43) }}">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Surgical Procedures</label>
+            <input type="number" name="num_procedures" class="form-control form-control-sm"
+                   min="0" max="6" value="{{ d.get('num_procedures', 1) }}">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Total Medications</label>
+            <input type="number" name="num_medications" class="form-control form-control-sm"
+                   min="1" max="81" value="{{ d.get('num_medications', 15) }}">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Total Diagnoses</label>
+            <input type="number" name="number_diagnoses" class="form-control form-control-sm"
+                   min="1" max="16" value="{{ d.get('number_diagnoses', 8) }}">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Outpatient Visits (last year)</label>
+            <input type="number" name="number_outpatient" class="form-control form-control-sm"
+                   min="0" max="42" value="{{ d.get('number_outpatient', 0) }}">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Emergency Visits (last year)</label>
+            <input type="number" name="number_emergency" class="form-control form-control-sm"
+                   min="0" max="42" value="{{ d.get('number_emergency', 0) }}">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Inpatient Stays (last year)</label>
+            <input type="number" name="number_inpatient" class="form-control form-control-sm"
+                   min="0" max="20" value="{{ d.get('number_inpatient', 0) }}">
+          </div>
+        </div>
+      </div>
+
+      {# ─── Section D: Diagnoses ─────────────────────────────────────────── #}
+      <div class="dc-rep-card" style="--c:#e0483f;">
+        <div class="dc-rep-sec-head">
+          <span class="dc-rep-sec-ico"><i class="bi bi-clipboard2-pulse"></i></span>
+          <div>
+            <h2 class="dc-rep-sec-title">Diagnoses</h2>
+            <p class="dc-rep-sec-sub">ICD-9 codes for Discharge/Medication models; grouped category for Readmission/HbA1c/Profile models.</p>
+          </div>
+        </div>
+        <div class="row g-3">
+          <div class="col-md-4">
+            <label class="form-label">Primary Diagnosis ICD-9 (free text)</label>
+            <input type="text" name="diag_1" class="form-control form-control-sm"
+                   placeholder="e.g. 428" value="{{ d.get('diag_1', '428') }}">
+            <div class="form-text">Used by Discharge &amp; Medication Load models.</div>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Secondary Diagnosis 2 (ICD-9)</label>
+            <input type="text" name="diag_2" class="form-control form-control-sm"
+                   placeholder="e.g. 250 or NA" value="{{ d.get('diag_2', '250') }}">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Secondary Diagnosis 3 (ICD-9)</label>
+            <input type="text" name="diag_3" class="form-control form-control-sm"
+                   placeholder="e.g. NA" value="{{ d.get('diag_3', 'NA') }}">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Primary Diagnosis — Category (Readmission / HbA1c / Profile models)</label>
+            <select name="diag_1_grp" class="form-select form-select-sm">
+              {% for val, label in diag_groups.items() %}
+                <option value="{{ val }}" {% if d.get('diag_1_grp', 'Circulatory') == val %}selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {# ─── Section E: Medications & Diabetes ────────────────────────────── #}
+      <div class="dc-rep-card" style="--c:#7c3aed;">
+        <div class="dc-rep-sec-head">
+          <span class="dc-rep-sec-ico"><i class="bi bi-capsule-pill"></i></span>
+          <div>
+            <h2 class="dc-rep-sec-title">Medications &amp; Diabetes Management</h2>
+            <p class="dc-rep-sec-sub">Diabetic drug use, test results, and medication adjustments during stay.</p>
+          </div>
+        </div>
+        <div class="row g-3">
+          <div class="col-md-3">
+            <label class="form-label">Diabetes Drugs Prescribed</label>
+            <input type="number" name="n_meds_used" class="form-control form-control-sm"
+                   min="0" max="10" value="{{ d.get('n_meds_used', 1) }}">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Drug Dose Changes (Seif)</label>
+            <input type="number" name="n_med_changes" class="form-control form-control-sm"
+                   min="0" max="6" value="{{ d.get('n_med_changes', 0) }}">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Drug Dose Changes (Profile)</label>
+            <input type="number" name="n_meds_changed" class="form-control form-control-sm"
+                   min="0" max="6" value="{{ d.get('n_meds_changed', 0) }}">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Insulin</label>
+            <select name="insulin" class="form-select form-select-sm">
+              {% for opt in insulin_opts %}
+                <option value="{{ opt }}" {% if d.get('insulin', 'No') == opt %}selected{% endif %}>{{ opt }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Metformin</label>
+            <select name="metformin" class="form-select form-select-sm">
+              {% for opt in metformin_opts %}
+                <option value="{{ opt }}" {% if d.get('metformin', 'No') == opt %}selected{% endif %}>{{ opt }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">HbA1c Result (A1C)</label>
+            <select name="A1Cresult" class="form-select form-select-sm">
+              {% for opt in a1c_opts %}
+                <option value="{{ opt }}" {% if d.get('A1Cresult', 'None') == opt %}selected{% endif %}>{{ opt }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Max Glucose Serum</label>
+            <select name="max_glu_serum" class="form-select form-select-sm">
+              {% for opt in glu_opts %}
+                <option value="{{ opt }}" {% if d.get('max_glu_serum', 'None') == opt %}selected{% endif %}>{{ opt }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">HbA1c Measured? (HbA1c model)</label>
+            <select name="a1c_tested" class="form-select form-select-sm">
+              {% for opt in yesno %}
+                <option value="{{ opt }}" {% if d.get('a1c_tested', 'No') == opt %}selected{% endif %}>{{ opt }}</option>
+              {% endfor %}
+            </select>
+            <div class="form-text">Used by HbA1c &amp; Treatment model only.</div>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Glucose Serum Tested?</label>
+            <select name="glu_tested" class="form-select form-select-sm">
+              {% for opt in yesno %}
+                <option value="{{ opt }}" {% if d.get('glu_tested', 'No') == opt %}selected{% endif %}>{{ opt }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Medication Change During Stay</label>
+            <select name="change" class="form-select form-select-sm">
+              {% for opt in yesno %}
+                <option value="{{ opt }}" {% if d.get('change', 'No') == opt %}selected{% endif %}>{{ opt }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Diabetes Medication Prescribed</label>
+            <select name="diabetesMed" class="form-select form-select-sm">
+              {% for opt in yesno %}
+                <option value="{{ opt }}" {% if d.get('diabetesMed', 'Yes') == opt %}selected{% endif %}>{{ opt }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {# ─── Submit ───────────────────────────────────────────────────────── #}
+      <div class="dc-rep-actions">
+        <button type="submit" class="dc-rep-btn-run">
+          <i class="bi bi-cpu"></i>Run All Models
+        </button>
+        <a href="{{ url_for('main.patient_summary') }}" class="dc-rep-btn-reset">
+          <i class="bi bi-arrow-counterclockwise"></i>Reset
+        </a>
+      </div>
+
+    </form>
+  </div>
+</section>
+
+{# ══════════════════════════════════════════════════════════════════════════
+   RESULTS SECTION — only rendered after POST
+═══════════════════════════════════════════════════════════════════════════ #}
+{% if results is defined and results %}
+<section class="dc-rep-results" id="results">
+  <div class="container">
+
+    <!-- Results Header -->
+    <div class="dc-rep-res-head">
+      <div>
+        <span class="dc-rep-res-badge"><i class="bi bi-check2-circle"></i>Assessment Complete</span>
+        <h3 class="dc-rep-res-title">Unified Patient Report Results</h3>
+      </div>
+      <div class="dc-rep-res-btns">
+        <button type="button" class="dc-rep-rbtn ghost" onclick="window.print()">
+          <i class="bi bi-printer"></i>Print Report
+        </button>
+        <a href="{{ url_for('main.patient_summary') }}" class="dc-rep-rbtn solid">
+          <i class="bi bi-plus-circle"></i>New Patient
+        </a>
+      </div>
+    </div>
+
+    {# ─── Combined Clinical Rules ────────────────────────────────────────── #}
+    {% set rules = results.combined_rules %}
+    {% if rules %}
+    <div class="mb-4" data-aos="fade-up">
+      <h4 class="dc-rep-h"><i class="bi bi-shield-exclamation"></i>Integrated Clinical Guidance</h4>
+      {% for rule in rules %}
+      <div class="dc-rep-alert dc-rep-alert-{{ rule.level }}" role="alert">
+        <span class="dc-rep-alert-ico"><i class="bi {{ rule.icon }}"></i></span>
+        <div>
+          <strong>{{ rule.title }}</strong>
+          <p>{{ rule.body }}</p>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {# ─── Model Results Grid ─────────────────────────────────────────────── #}
+    <h4 class="dc-rep-h mt-5"><i class="bi bi-grid"></i>Individual Model Results</h4>
+
+    <div class="row gy-4">
+
+      {# ── LOS Card (Asma) ────────────────────────────────────────────────── #}
+      <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="50">
+        <div class="dc-rep-rcard" style="--c:#1558d6;">
+          <div class="dc-rep-rbody">
+            <div class="dc-rep-rhead">
+              <span class="dc-rep-rico"><i class="bi bi-calendar-range"></i></span>
+              <div>
+                <h3>Length of Stay</h3>
+                <small>Asma's model</small>
+              </div>
+            </div>
+            {% if results.los %}
+              {% set los = results.los %}
+              {% set los_col = '#dc3545' if los.is_long else '#0ea5e9' %}
+              <div class="text-center py-2">
+                <div class="fs-2 fw-bold" style="color: {{ los_col }};">
+                  {{ los.percentage }}%
+                </div>
+                <div class="badge mb-2" style="background-color: {{ los_col }}; color: #fff;">
+                  {{ los.label }}
+                </div>
+                <!-- Probability Distribution -->
+                <div class="d-flex justify-content-between small text-muted mb-1 px-1">
+                  <span>Stay &gt; 3 Days</span>
+                  <span class="fw-bold" style="color: {{ los_col }};">{{ los.percentage }}%</span>
+                </div>
+                <div class="progress mb-2" style="height:8px;border-radius:6px;">
+                  <div class="progress-bar" style="width:{{ los.percentage }}%; background-color: {{ los_col }};"></div>
+                </div>
+                <div class="d-flex justify-content-between small text-muted mb-1 px-1">
+                  <span>Stay &le; 3 Days</span>
+                  <span class="fw-bold" style="color: #0ea5e9;">{{ (100 - los.percentage)|round(1) }}%</span>
+                </div>
+                <div class="progress mb-3" style="height:6px;border-radius:6px;">
+                  <div class="progress-bar" style="width:{{ [100 - los.percentage, 100]|min }}%; background-color: #0ea5e9;"></div>
+                </div>
+              </div>
+              <div class="dc-rep-interp mb-2">
+                <strong>Interpretation:</strong> {% if los.is_long %}High probability of prolonged hospitalization (&gt; 3 days); initiate discharge barrier screening early.{% else %}Routine short stay anticipated (&le; 3 days); follow standard clinical pathway.{% endif %}
+              </div>
+              <p class="text-muted small mb-0 mt-auto">{{ los.advice }}</p>
+            {% elif results.errors.get('los') %}
+              <div class="alert alert-warning small py-2">Model error. Check form inputs.</div>
+            {% else %}
+              <p class="text-muted small">No result.</p>
+            {% endif %}
+            <div class="mt-3">
+              <a href="{{ url_for('admission.los_single') }}" class="dc-rep-open">
+                <i class="bi bi-arrow-right me-1"></i>Open Full LOS Tool
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {# ── Discharge Destination Card (Dhie) ──────────────────────────────── #}
+      <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="100">
+        <div class="dc-rep-rcard" style="--c:#0e9aa7;">
+          <div class="dc-rep-rbody">
+            <div class="dc-rep-rhead">
+              <span class="dc-rep-rico"><i class="bi bi-box-arrow-right"></i></span>
+              <div>
+                <h3>Discharge Destination</h3>
+                <small>Dhie's model</small>
+              </div>
+            </div>
+            {% if results.discharge %}
+              {% set disc = results.discharge %}
+              <div class="text-center py-2">
+                <div class="fs-5 fw-bold mb-1" style="color:var(--heading-color);">
+                  {{ disc.pred_label }}
+                </div>
+                {% if disc.transfer_alert %}
+                <div class="badge mb-2" style="background-color: #175cdd; color: #fff;">⚠ Transfer Facility Alert</div>
+                {% else %}
+                <div class="badge mb-2" style="background-color: #0ea5e9; color: #fff;">Standard Pathway</div>
+                {% endif %}
+                <div class="small text-muted mb-2">Transfer Probability: <strong>{{ (disc.transfer_prob * 100)|round(1) }}%</strong> (Cutoff: {{ (disc.threshold * 100)|round(1) }}%)</div>
+              </div>
+              <!-- Probability Distribution -->
+              <div class="mt-1 mb-2">
+                <div class="small fw-semibold text-muted mb-1">Probability by Destination:</div>
+                {% for cls, prob in disc.probs.items() %}
+                {% set pct = (prob * 100)|round(1) %}
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <small class="text-muted">{{ cls }}</small>
+                  <div class="d-flex align-items-center gap-2" style="width:60%;">
+                    <div class="progress flex-grow-1" style="height:6px;border-radius:4px;">
+                      <div class="progress-bar" style="width:{{ pct }}%; background-color: {% if cls == disc.pred_label or cls == disc.pred %}#175cdd{% else %}#cbd5e1{% endif %};"></div>
+                    </div>
+                    <small class="fw-semibold text-muted">{{ pct }}%</small>
+                  </div>
+                </div>
+                {% endfor %}
+              </div>
+              <div class="dc-rep-interp mb-2 mt-auto">
+                <strong>Interpretation:</strong> {% if disc.transfer_alert %}Transfer likelihood exceeds decision threshold; contact transitional care coordinator.{% else %}Patient suitable for standard discharge home; arrange routine outpatient follow-up.{% endif %}
+              </div>
+            {% elif results.errors.get('discharge') %}
+              <div class="alert alert-warning small py-2">Model error. Check form inputs.</div>
+            {% else %}
+              <p class="text-muted small">No result.</p>
+            {% endif %}
+            <div class="mt-3">
+              <a href="{{ url_for('admission.discharge_single') }}" class="dc-rep-open">
+                <i class="bi bi-arrow-right me-1"></i>Open Full Discharge Tool
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {# ── Medication Load Card ─────────────────────────────────────── #}
+      <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="150">
+        <div class="dc-rep-rcard" style="--c:#4f46e5;">
+          <div class="dc-rep-rbody">
+            <div class="dc-rep-rhead">
+              <span class="dc-rep-rico"><i class="bi bi-capsule-pill"></i></span>
+              <div>
+                <h3>Medication Load</h3>
+                <small>XGBoost classification model</small>
+              </div>
+            </div>
+            {% if results.medication %}
+              {% set med = results.medication %}
+              <div class="text-center py-2">
+                <div class="fs-5 fw-bold mb-1" style="color:{{ med.color }};">{{ med.title }}</div>
+                <div class="badge mb-2" style="background-color:{{ med.color }}; color:#fff;">{{ med.description }}</div>
+              </div>
+              <!-- Probability Distribution -->
+              <div class="mb-2">
+                <div class="small fw-semibold text-muted mb-1">Class Probability Distribution:</div>
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <small class="text-muted">&le;11 meds (Low)</small>
+                  <div class="d-flex align-items-center gap-2" style="width:60%;">
+                    <div class="progress flex-grow-1" style="height:6px;border-radius:4px;">
+                      <div class="progress-bar" style="width:{{ med.probs_percent.low }}%; background-color: #0ea5e9;"></div>
+                    </div>
+                    <small class="fw-semibold" style="color:#0284c7;">{{ med.probs_percent.low }}%</small>
+                  </div>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <small class="text-muted">12-17 meds (Mod)</small>
+                  <div class="d-flex align-items-center gap-2" style="width:60%;">
+                    <div class="progress flex-grow-1" style="height:6px;border-radius:4px;">
+                      <div class="progress-bar" style="width:{{ med.probs_percent.medium }}%; background-color: #175cdd;"></div>
+                    </div>
+                    <small class="fw-semibold" style="color:#175cdd;">{{ med.probs_percent.medium }}%</small>
+                  </div>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <small class="text-muted">&ge;18 meds (High)</small>
+                  <div class="d-flex align-items-center gap-2" style="width:60%;">
+                    <div class="progress flex-grow-1" style="height:6px;border-radius:4px;">
+                      <div class="progress-bar" style="width:{{ med.probs_percent.high }}%; background-color: #dc3545;"></div>
+                    </div>
+                    <small class="fw-semibold" style="color:#dc3545;">{{ med.probs_percent.high }}%</small>
+                  </div>
+                </div>
+              </div>
+              <div class="dc-rep-interp mb-2 mt-auto">
+                <strong>Interpretation:</strong> {% if med.tier == 'high' %}Complex polypharmacy profile; pharmacist reconciliation strongly recommended.{% elif med.tier == 'medium' %}Moderate drug burden; review for interaction risks.{% else %}Low medication load; standard discharge counseling.{% endif %}
+              </div>
+            {% elif results.errors.get('medication') %}
+              <div class="alert alert-warning small py-2">Model error. Check form inputs.</div>
+            {% else %}
+              <p class="text-muted small">No result.</p>
+            {% endif %}
+            <div class="mt-3">
+              <a href="{{ url_for('clinical.medication_single') }}" class="dc-rep-open">
+                <i class="bi bi-arrow-right me-1"></i>Open Full Medication Tool
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {# ── Doctor-only models ──────────────────────────────────────────────── #}
+      {% if current_user.role == 'doctor' %}
+
+      {# ── Readmission Risk Card (Seif) ───────────────────────────────────── #}
+      <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="200">
+        <div class="dc-rep-rcard" style="--c:#ff5a5f;">
+          <div class="dc-rep-rbody">
+            <div class="dc-rep-rhead">
+              <span class="dc-rep-rico"><i class="bi bi-arrow-repeat"></i></span>
+              <div>
+                <h3>Readmission Risk</h3>
+                <small>Seif's stacking model</small>
+              </div>
+            </div>
+            {% if results.readmission %}
+              {% set rm = results.readmission %}
+              {% set band_color = {'high':'#dc3545','elevated':'#175cdd','low':'#0ea5e9'} %}
+              {% set rc = band_color.get(rm.band, '#175cdd') %}
+              <div class="text-center py-2">
+                <div class="fs-2 fw-bold" style="color:{{ rc }};">
+                  {{ rm.percentage }}%
+                </div>
+                <div class="badge mb-2" style="background-color:{{ rc }}; color:#fff;">
+                  {{ rm.band|title }} Risk
+                </div>
+                <!-- Probability Distribution -->
+                <div class="d-flex justify-content-between small text-muted mb-1 px-1">
+                  <span>30-Day Readmission Risk</span>
+                  <span class="fw-bold" style="color:{{ rc }};">{{ rm.percentage }}%</span>
+                </div>
+                <div class="progress mb-2" style="height:8px;border-radius:6px;">
+                  <div class="progress-bar" style="width:{{ [rm.percentage, 100]|min }}%;background:{{ rc }};"></div>
+                </div>
+                <div class="d-flex justify-content-between small text-muted mb-1 px-1">
+                  <span>No Readmission Expected</span>
+                  <span class="fw-bold" style="color:#0ea5e9;">{{ (100 - rm.percentage)|round(1) }}%</span>
+                </div>
+                <div class="progress mb-3" style="height:6px;border-radius:6px;">
+                  <div class="progress-bar" style="width:{{ [100 - rm.percentage, 100]|min }}%;background:#0ea5e9;"></div>
+                </div>
+              </div>
+              <div class="dc-rep-interp mb-2">
+                <strong>Interpretation:</strong> {% if rm.band == 'high' %}High readmission hazard; intensive transitional care and medication outreach within 48–72 hours indicated.{% elif rm.band == 'elevated' %}Elevated hazard above threshold; schedule 5–7 day clinic follow-up.{% else %}Low risk below hospital baseline; standard discharge protocol.{% endif %}
+              </div>
+              {% if rm.factors %}
+              <div class="mt-auto">
+                <p class="text-muted small fw-semibold mb-1">Top contributing factors:</p>
+                {% for f in rm.factors[:2] %}
+                <div class="d-flex justify-content-between small mb-1">
+                  <span class="text-muted">{{ f.field }} ({{ f.value }})</span>
+                  <span class="{% if f.effect > 0 %}text-danger{% else %}text-success{% endif %} fw-semibold">
+                    {{ '+' if f.effect > 0 else '' }}{{ "%.2f"|format(f.effect) }}
+                  </span>
+                </div>
+                {% endfor %}
+              </div>
+              {% endif %}
+            {% elif results.errors.get('readmission') %}
+              <div class="alert alert-warning small py-2">Model error. Check form inputs.</div>
+            {% else %}
+              <p class="text-muted small">No result.</p>
+            {% endif %}
+            <div class="mt-3">
+              <a href="{{ url_for('clinical.readmission_single') }}" class="dc-rep-open">
+                <i class="bi bi-arrow-right me-1"></i>Open Full Readmission Tool
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {# ── HbA1c Card (Ons) ────────────────────────────────────────────────── #}
+      <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="250">
+        <div class="dc-rep-rcard" style="--c:#7c3aed;">
+          <div class="dc-rep-rbody">
+            <div class="dc-rep-rhead">
+              <span class="dc-rep-rico"><i class="bi bi-droplet-half"></i></span>
+              <div>
+                <h3>HbA1c &amp; Glycemic Care</h3>
+                <small>Ons's logistic regression</small>
+              </div>
+            </div>
+            {% if results.hba1c %}
+              {% set hba = results.hba1c %}
+              {% set hba_colors = {'high':'#dc3545','elevated':'#175cdd','low':'#0ea5e9'} %}
+              {% set hc = hba_colors.get(hba.band, '#175cdd') %}
+              <div class="text-center py-2">
+                <div class="fs-2 fw-bold" style="color:{{ hc }};">
+                  {{ hba.percentage }}%
+                </div>
+                <div class="badge mb-2" style="background-color:{{ hc }}; color:#fff;">
+                  {{ hba.band|title }} Risk
+                </div>
+                <!-- Probability Distribution -->
+                <div class="d-flex justify-content-between small text-muted mb-1 px-1">
+                  <span>Glycemic-Adjusted Risk</span>
+                  <span class="fw-bold" style="color:{{ hc }};">{{ hba.percentage }}%</span>
+                </div>
+                <div class="progress mb-2" style="height:8px;border-radius:6px;">
+                  <div class="progress-bar" style="width:{{ [hba.percentage, 100]|min }}%;background:{{ hc }};"></div>
+                </div>
+                {% if hba.a1c_tested == 'No' %}
+                <div class="badge mt-1 mb-2" style="background-color: #175cdd; color: #fff;">HbA1c Not Measured (OR 0.904 benefit)</div>
+                {% else %}
+                <div class="badge mt-1 mb-2" style="background-color: #0ea5e9; color: #fff;">HbA1c Measured Inpatient</div>
+                {% endif %}
+              </div>
+              <div class="dc-rep-interp mb-2">
+                <strong>Interpretation:</strong> {% if hba.a1c_tested == 'No' %}HbA1c not performed; inpatient measurement is clinically proven to lower readmission risk by ~9.6%. Order test prior to discharge.{% else %}HbA1c documented; use glycemic trajectory to titrate discharge medications.{% endif %}
+              </div>
+              {% if hba.factors %}
+              <div class="mt-auto">
+                <p class="text-muted small fw-semibold mb-1">Top glycemic factors:</p>
+                {% for f in hba.factors[:2] %}
+                <div class="d-flex justify-content-between small mb-1">
+                  <span class="text-muted">{{ f.field }}</span>
+                  <span class="{% if f.effect > 0 %}text-danger{% else %}text-success{% endif %} fw-semibold">
+                    {{ '+' if f.effect > 0 else '' }}{{ "%.2f"|format(f.effect) }}
+                  </span>
+                </div>
+                {% endfor %}
+              </div>
+              {% endif %}
+            {% elif results.errors.get('hba1c') %}
+              <div class="alert alert-warning small py-2">Model error. Check form inputs.</div>
+            {% else %}
+              <p class="text-muted small">No result.</p>
+            {% endif %}
+            <div class="mt-3">
+              <a href="{{ url_for('clinical.hba1c_single') }}" class="dc-rep-open">
+                <i class="bi bi-arrow-right me-1"></i>Open Full HbA1c Tool
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {# ── Patient Profile Card (Moez) ─────────────────────────────────────── #}
+      <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="300">
+        <div class="dc-rep-rcard" style="--c:#38bdf8;">
+          <div class="dc-rep-rbody">
+            <div class="dc-rep-rhead">
+              <span class="dc-rep-rico"><i class="bi bi-pie-chart"></i></span>
+              <div>
+                <h3>Patient Phenotype</h3>
+                <small>Moez's K-Means clustering</small>
+              </div>
+            </div>
+            {% if results.profile %}
+              {% set prof = results.profile %}
+              {% set prof_color = '#0ea5e9' if prof.cluster == 0 else '#175cdd' %}
+              <div class="text-center py-2">
+                <div class="fs-2 fw-bold mb-1" style="color:{{ prof_color }};">
+                  Profile {{ prof.cluster }}
+                </div>
+                <div class="badge mb-2" style="background-color:{{ prof_color }}; color:#fff;">
+                  {{ 'Routine / Standard Phenotype' if prof.cluster == 0 else 'Complex / High-Acuity Phenotype' }}
+                </div>
+                <p class="text-muted small mb-2">
+                  PCA Coordinates: ({{ "%.2f"|format(prof.pc1) }}, {{ "%.2f"|format(prof.pc2) }})
+                </p>
+                <div class="progress mb-2" style="height:8px;border-radius:6px;">
+                  <div class="progress-bar" style="width: 100%; background-color: {{ prof_color }};"></div>
+                </div>
+              </div>
+              <div class="dc-rep-interp mb-2">
+                <strong>Interpretation:</strong> {% if prof.cluster == 1 %}Patient exhibits higher clinical complexity, greater polypharmacy, and extended stay length. Multidisciplinary care coordination recommended.{% else %}Patient exhibits standard inpatient trajectory and manageable clinical load. Follow standard diabetic care path.{% endif %}
+              </div>
+              {% if prof.characteristics %}
+              <div class="mt-auto">
+                <p class="text-muted small fw-semibold mb-1">Key characteristics:</p>
+                <ul class="list-unstyled small text-muted mb-0">
+                  {% for c in prof.characteristics[:2] %}
+                  <li class="mb-1"><i class="bi bi-dot"></i>{{ c }}</li>
+                  {% endfor %}
+                </ul>
+              </div>
+              {% endif %}
+            {% elif results.errors.get('profile') %}
+              <div class="alert alert-warning small py-2">Model error. Check form inputs.</div>
+            {% else %}
+              <p class="text-muted small">No result.</p>
+            {% endif %}
+            <div class="mt-3">
+              <a href="{{ url_for('clinical.profiles_patient') }}" class="dc-rep-open">
+                <i class="bi bi-arrow-right me-1"></i>Open Full Profile Tool
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {% endif %}{# end doctor-only #}
+
+    </div>{# end row #}
+
+    {# ─── Decision Support Advisory Banner ─────────────────────────────── #}
+    <div class="dc-rep-advisory">
+      <i class="bi bi-info-circle-fill"></i>
+      <div>
+        <strong>Decision Support Advisory:</strong> DiaCare models assist clinical prioritization and transitional care allocation. They do not constitute diagnostic or prescriptive orders. Always consider the full clinical context.
+      </div>
+    </div>
+
+  </div>
+</section>
+{% endif %}
+
+</div>{# end .dc-rep #}
+
+<script>
+  // Sample profile loader data
+  var EXAMPLES_DATA = {{ examples|tojson if examples is defined else '{}' }};
+
+  function fillSummaryForm(ex, btn) {
+    if (!ex) return;
+    var form = document.getElementById('summaryForm');
+    if (!form) return;
+    for (var k in ex) {
+      var input = form.elements[k];
+      if (input) {
+        input.value = String(ex[k]);
+        input.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+    }
+    // Visual feedback (Degrees of Blue: Light Sky Blue #0ea5e9 for routine, Royal Blue #175cdd for complex - ZERO green)
+    if (btn) {
+      var origHtml = btn.innerHTML;
+      var origBg = btn.style.backgroundColor;
+      var origBorder = btn.style.borderColor;
+      var origColor = btn.style.color;
+      var isComplex = btn.id === 'btnSampleComplex';
+      var activeBg = isComplex ? '#175cdd' : '#0ea5e9';
+      
+      btn.innerHTML = '<i class="bi bi-check2-circle me-1"></i>Loaded!';
+      btn.style.setProperty('background-color', activeBg, 'important');
+      btn.style.setProperty('border-color', activeBg, 'important');
+      btn.style.setProperty('color', '#ffffff', 'important');
+      
+      setTimeout(function() {
+        btn.innerHTML = origHtml;
+        btn.style.backgroundColor = origBg;
+        btn.style.borderColor = origBorder;
+        btn.style.color = origColor;
+      }, 1500);
+    }
+    // Focus first input field
+    var firstField = form.querySelector('select, input');
+    if (firstField) {
+      firstField.focus();
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    var btnRoutine = document.getElementById('btnSampleRoutine');
+    if (btnRoutine) {
+      btnRoutine.addEventListener('click', function(e) {
+        e.preventDefault();
+        fillSummaryForm(EXAMPLES_DATA.routine, btnRoutine);
+      });
+    }
+
+    var btnComplex = document.getElementById('btnSampleComplex');
+    if (btnComplex) {
+      btnComplex.addEventListener('click', function(e) {
+        e.preventDefault();
+        fillSummaryForm(EXAMPLES_DATA.complex, btnComplex);
+      });
+    }
+
+    // Auto-scroll to results on page load after POST
+    var el = document.getElementById('results');
+    if (el) { el.scrollIntoView({behavior: 'smooth', block: 'start'}); }
+  });
+</script>
+
+{% endblock %}

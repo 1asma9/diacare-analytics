@@ -1,0 +1,406 @@
+{% extends "base.html" %}
+
+{% block title %}Patient Profile Placement — DiaCare Analytics{% endblock %}
+
+{% block extra_head %}
+<link href="{{ url_for('static', filename='css/dc-tools.css') }}" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="dc-tool" style="--c:#1558d6;">
+
+<!-- Hero Banner with Clinical Image -->
+<section class="dc-tool-hero">
+  <div class="container" data-aos="fade-up">
+    <div class="dc-tool-hero-card">
+      <div class="dc-tool-hero-text">
+        <div class="dc-tool-pill">
+          <i class="bi bi-person-bounding-box"></i> Patient Phenotyping &bull; Doctors Only
+        </div>
+        <h1 class="dc-tool-title">Where Does This Patient Fit?</h1>
+        <p class="dc-tool-desc">
+          Project an individual inpatient stay into 18-dimensional PCA cluster space to classify the patient as either a Routine stay (Profile 0) or a Complex polypharmacy stay (Profile 1).
+        </p>
+      </div>
+      <div class="dc-tool-hero-media">
+        <img src="{{ url_for('static', filename='img/health/neurology-3.webp') }}" alt="Patient Profile Classification">
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Content Section -->
+<section class="dc-tool-body">
+  <div class="container" data-aos="fade-up">
+
+    {% if errors %}
+    <div class="dc-alert-err" role="alert">
+      <i class="bi bi-exclamation-triangle-fill"></i>
+      <div>
+        <h6>Please review the following inputs:</h6>
+        <ul>
+          {% for e in errors %}<li>{{ e }}</li>{% endfor %}
+        </ul>
+      </div>
+    </div>
+    {% endif %}
+
+    {% if result %}
+    <!-- RESULT CARD -->
+    <div class="dc-res">
+      <div class="dc-res-head">
+        <div>
+          <span class="dc-res-badge"><i class="bi bi-check2-circle"></i>Assessment Complete</span>
+          <h2 class="dc-res-title">Assigned Patient Archetype</h2>
+        </div>
+        <div class="dc-res-btns">
+          <button type="button" class="dc-btn-ghost" onclick="window.print()">
+            <i class="bi bi-printer"></i>Print Report
+          </button>
+          <a href="{{ url_for('clinical.profiles_patient') }}" class="dc-btn-solid">
+            <i class="bi bi-plus-circle"></i>New Patient
+          </a>
+        </div>
+      </div>
+
+      <div class="dc-res-body">
+        <div class="dc-res-grid">
+          <!-- Assigned Profile Column -->
+          <div class="dc-res-left">
+            <div class="dc-label">Clustering Phenotype</div>
+            <div class="dc-bigval" style="color: {{ result.color }};">
+              {{ result.title }}
+            </div>
+            <p class="small mb-3" style="color: var(--dc-muted);">{{ result.summary }}</p>
+
+            <div class="dc-note" style="margin-top: 0; margin-bottom: 18px;">
+              <strong>Tailored Recommendation:</strong>
+              <p>{{ result.recommendation }}</p>
+            </div>
+
+            <!-- Phenotypic Alignment / Probability Distribution -->
+            {% set total_dist = result.dist_0 + result.dist_1 %}
+            {% if total_dist > 0 %}
+              {% set aff_0 = ((result.dist_1 / total_dist) * 100)|round(1) %}
+              {% set aff_1 = ((result.dist_0 / total_dist) * 100)|round(1) %}
+            {% else %}
+              {% set aff_0 = 50.0 %}
+              {% set aff_1 = 50.0 %}
+            {% endif %}
+            <div class="pt-3 text-start" style="border-top: 1px dashed var(--dc-line);">
+              <div class="dc-res-h" style="font-size: .9rem; margin-bottom: 14px;">
+                <span><i class="bi bi-bar-chart-fill"></i>Phenotype Alignment Distribution</span>
+                <span class="dc-cut">k-Means Cluster Affinity</span>
+              </div>
+
+              <div class="dc-bar-row">
+                <div class="dc-bar-top">
+                  <span>Profile 0 (Routine Phenotype)</span>
+                  <span class="dc-pct" style="color: #0ea5e9;">{{ aff_0 }}%</span>
+                </div>
+                <div class="progress" style="height: 10px; border-radius: 6px;">
+                  <div class="progress-bar" style="width: {{ aff_0 }}%; background-color: #0ea5e9;"></div>
+                </div>
+              </div>
+
+              <div class="dc-bar-row">
+                <div class="dc-bar-top">
+                  <span>Profile 1 (Complex Phenotype)</span>
+                  <span class="dc-pct" style="color: #175cdd;">{{ aff_1 }}%</span>
+                </div>
+                <div class="progress" style="height: 10px; border-radius: 6px;">
+                  <div class="progress-bar" style="width: {{ aff_1 }}%; background-color: #175cdd;"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="row g-3 pt-3 text-center" style="border-top: 1px dashed var(--dc-line);">
+              <div class="col-6">
+                <div class="dc-mini">
+                  <div class="l">PCA Coordinates</div>
+                  <div class="v" style="font-size: 1.05rem;">({{ result.pc1 }}, {{ result.pc2 }})</div>
+                </div>
+              </div>
+              <div class="col-6">
+                <div class="dc-mini">
+                  <div class="l">Assigned Centroid Dist.</div>
+                  <div class="v" style="font-size: 1.05rem;">
+                    {% if result.cluster == 0 %}{{ result.dist_0 }}{% else %}{{ result.dist_1 }}{% endif %}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Comparison with Benchmark -->
+          <div>
+            <div class="dc-res-h">
+              <span><i class="bi bi-table"></i>Comparison with Cluster Benchmarks</span>
+            </div>
+
+            <div class="dc-table-wrap table-responsive">
+              <table class="table table-sm align-middle">
+                <thead>
+                  <tr>
+                    <th>Clinical Dimension</th>
+                    <th class="text-center">This Patient</th>
+                    <th class="text-center">Profile 0 Mean</th>
+                    <th class="text-center">Profile 1 Mean</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Length of Stay</td>
+                    <td class="text-center fw-bold">{{ result.patient_metrics.time_in_hospital }} days</td>
+                    <td class="text-center text-muted">3.1 days</td>
+                    <td class="text-center text-muted">6.3 days</td>
+                  </tr>
+                  <tr>
+                    <td>Medications Administered</td>
+                    <td class="text-center fw-bold">{{ result.patient_metrics.num_medications }} drugs</td>
+                    <td class="text-center text-muted">12.0 drugs</td>
+                    <td class="text-center text-muted">21.6 drugs</td>
+                  </tr>
+                  <tr>
+                    <td>Diagnoses Count</td>
+                    <td class="text-center fw-bold">{{ result.patient_metrics.number_diagnoses }}</td>
+                    <td class="text-center text-muted">7.1</td>
+                    <td class="text-center text-muted">8.2</td>
+                  </tr>
+                  <tr>
+                    <td>Drug Dosage Adjustments</td>
+                    <td class="text-center fw-bold">{{ result.patient_metrics.n_meds_changed }}</td>
+                    <td class="text-center text-muted">0.08</td>
+                    <td class="text-center text-muted">0.55</td>
+                  </tr>
+                  <tr>
+                    <td>Diabetes Drugs Used</td>
+                    <td class="text-center fw-bold">{{ result.patient_metrics.n_meds_used }}</td>
+                    <td class="text-center text-muted">0.88</td>
+                    <td class="text-center text-muted">1.70</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Short Interpretation of Results (Below Results) -->
+        <div class="dc-interp">
+          <div class="dc-interp-t"><i class="bi bi-info-circle-fill"></i>Clinical Interpretation:</div>
+          <p>
+            {% if result.cluster == 1 %}
+              Patient's inpatient profile closely matches <strong>Profile 1: Complex High-Utilization Phenotype</strong> (distance to centroid: <strong>{{ result.dist_1 }}</strong> vs {{ result.dist_0 }}). Characterized by polypharmacy (&gt;20 drugs), prolonged hospitalization (&gt;6 days), and frequent regimen changes. High-intensity care coordination, clinical pharmacist consultation, and structured post-discharge outreach are recommended.
+            {% else %}
+              Patient's inpatient profile aligns with <strong>Profile 0: Routine / Standard Phenotype</strong> (distance to centroid: <strong>{{ result.dist_0 }}</strong> vs {{ result.dist_1 }}). Characterized by standard length of stay (median ~3 days), manageable medication load, and stable glycemic regimens. Routine clinical discharge pathway is indicated.
+            {% endif %}
+          </p>
+        </div>
+
+        <!-- Advisory Banner -->
+        <div class="dc-advisory">
+          <i class="bi bi-info-circle-fill"></i>
+          <div>
+            <strong>Decision Support Advisory:</strong> DiaCare models assist clinical prioritization and transitional care allocation. They do not constitute diagnostic or prescriptive orders. Always consider the full clinical context.
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- INPUT FORM CARD -->
+    <div class="dc-tool-card">
+      <div class="dc-tool-card-head">
+        <div>
+          <h2 class="dc-tool-card-title">Patient Stay Parameters</h2>
+          <p class="dc-tool-card-sub">Enter patient stay details to determine phenotypic alignment.</p>
+        </div>
+      </div>
+
+      <div class="dc-tool-sample justify-content-end mb-4">
+        <span>Try sample:</span>
+        <button type="button" class="dc-tool-sbtn ok" data-example='{{ examples.profile0|tojson|forceescape }}'>
+          Routine Inpatient (Profile 0)
+        </button>
+        <button type="button" class="dc-tool-sbtn danger" data-example='{{ examples.profile1|tojson|forceescape }}'>
+          Complex Inpatient (Profile 1)
+        </button>
+      </div>
+
+      <form id="profilesForm" method="post" action="{{ url_for('clinical.profiles_patient') }}">
+
+        <!-- Section 1: Inpatient Trajectory -->
+        <h6 class="dc-tool-sec">1. Stay Parameters &amp; History</h6>
+        <div class="row g-3 mb-4">
+          <div class="col-md-6 col-lg-3">
+            <label class="form-label" for="age_num">Approximate Age (Years)</label>
+            <input type="number" class="form-control" id="age_num" name="age_num" min="0" max="100" value="{{ d.age_num }}">
+          </div>
+
+          <div class="col-md-6 col-lg-3">
+            <label class="form-label" for="gender">Gender</label>
+            <select class="form-select" id="gender" name="gender">
+              <option value="Female" {% if d.gender == 'Female' %}selected{% endif %}>Female</option>
+              <option value="Male" {% if d.gender == 'Male' %}selected{% endif %}>Male</option>
+            </select>
+          </div>
+
+          <div class="col-md-6 col-lg-3">
+            <label class="form-label" for="diag_1">Primary Diagnosis (ICD-9)</label>
+            <input type="text" class="form-control" id="diag_1" name="diag_1" value="{{ d.diag_1 }}" placeholder="e.g. 428">
+          </div>
+
+          <div class="col-md-6 col-lg-3">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <label class="form-label mb-0" for="time_in_hospital">Length of Stay</label>
+              <span class="dc-val" id="time_in_hospital_v">{{ d.time_in_hospital }} days</span>
+            </div>
+            <input type="range" class="form-range" id="time_in_hospital" name="time_in_hospital" min="{{ limits.time_in_hospital[0] }}" max="{{ limits.time_in_hospital[1] }}" value="{{ d.time_in_hospital }}">
+          </div>
+
+          <div class="col-md-6 col-lg-3">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <label class="form-label mb-0" for="number_diagnoses">Total Diagnoses</label>
+              <span class="dc-val" id="number_diagnoses_v">{{ d.number_diagnoses }}</span>
+            </div>
+            <input type="range" class="form-range" id="number_diagnoses" name="number_diagnoses" min="{{ limits.number_diagnoses[0] }}" max="{{ limits.number_diagnoses[1] }}" value="{{ d.number_diagnoses }}">
+          </div>
+
+          <div class="col-md-6 col-lg-3">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <label class="form-label mb-0" for="num_lab_procedures">Lab Tests</label>
+              <span class="dc-val" id="num_lab_procedures_v">{{ d.num_lab_procedures }}</span>
+            </div>
+            <input type="range" class="form-range" id="num_lab_procedures" name="num_lab_procedures" min="{{ limits.num_lab_procedures[0] }}" max="{{ limits.num_lab_procedures[1] }}" value="{{ d.num_lab_procedures }}">
+          </div>
+
+          <div class="col-md-6 col-lg-3">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <label class="form-label mb-0" for="num_procedures">Procedures</label>
+              <span class="dc-val" id="num_procedures_v">{{ d.num_procedures }}</span>
+            </div>
+            <input type="range" class="form-range" id="num_procedures" name="num_procedures" min="{{ limits.num_procedures[0] }}" max="{{ limits.num_procedures[1] }}" value="{{ d.num_procedures }}">
+          </div>
+
+          <div class="col-md-6 col-lg-3">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <label class="form-label mb-0" for="number_inpatient">Inpatient Stays (Past Yr)</label>
+              <span class="dc-val" id="number_inpatient_v">{{ d.number_inpatient }}</span>
+            </div>
+            <input type="range" class="form-range" id="number_inpatient" name="number_inpatient" min="{{ limits.number_inpatient[0] }}" max="{{ limits.number_inpatient[1] }}" value="{{ d.number_inpatient }}">
+          </div>
+        </div>
+
+        <!-- Section 2: Pharmacotherapy & Adjustments -->
+        <h6 class="dc-tool-sec">2. Pharmacotherapy &amp; Laboratory Tests</h6>
+        <div class="row g-3 mb-4">
+          <div class="col-md-4">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <label class="form-label mb-0" for="num_medications">Total Medications</label>
+              <span class="dc-val" id="num_medications_v">{{ d.num_medications }}</span>
+            </div>
+            <input type="range" class="form-range" id="num_medications" name="num_medications" min="{{ limits.num_medications[0] }}" max="{{ limits.num_medications[1] }}" value="{{ d.num_medications }}">
+          </div>
+
+          <div class="col-md-4">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <label class="form-label mb-0" for="n_meds_used">Diabetes Drugs Used</label>
+              <span class="dc-val" id="n_meds_used_v">{{ d.n_meds_used }}</span>
+            </div>
+            <input type="range" class="form-range" id="n_meds_used" name="n_meds_used" min="{{ limits.n_meds_used[0] }}" max="{{ limits.n_meds_used[1] }}" value="{{ d.n_meds_used }}">
+          </div>
+
+          <div class="col-md-4">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <label class="form-label mb-0" for="n_meds_changed">Dosage Adjustments</label>
+              <span class="dc-val" id="n_meds_changed_v">{{ d.n_meds_changed }}</span>
+            </div>
+            <input type="range" class="form-range" id="n_meds_changed" name="n_meds_changed" min="{{ limits.n_meds_changed[0] }}" max="{{ limits.n_meds_changed[1] }}" value="{{ d.n_meds_changed }}">
+          </div>
+
+          <div class="col-md-3">
+            <label class="form-label" for="insulin">Insulin</label>
+            <select class="form-select" id="insulin" name="insulin">
+              <option value="No" {% if d.insulin == 'No' %}selected{% endif %}>No</option>
+              <option value="Steady" {% if d.insulin == 'Steady' %}selected{% endif %}>Steady</option>
+              <option value="Up" {% if d.insulin == 'Up' %}selected{% endif %}>Up</option>
+              <option value="Down" {% if d.insulin == 'Down' %}selected{% endif %}>Down</option>
+            </select>
+          </div>
+
+          <div class="col-md-3">
+            <label class="form-label" for="metformin">Metformin</label>
+            <select class="form-select" id="metformin" name="metformin">
+              <option value="No" {% if d.metformin == 'No' %}selected{% endif %}>No</option>
+              <option value="Steady" {% if d.metformin == 'Steady' %}selected{% endif %}>Steady</option>
+              <option value="Up" {% if d.metformin == 'Up' %}selected{% endif %}>Up</option>
+              <option value="Down" {% if d.metformin == 'Down' %}selected{% endif %}>Down</option>
+            </select>
+          </div>
+
+          <div class="col-md-3">
+            <label class="form-label" for="A1Cresult">HbA1c Result</label>
+            <select class="form-select" id="A1Cresult" name="A1Cresult">
+              <option value="NotTested" {% if d.A1Cresult == 'NotTested' %}selected{% endif %}>Not Tested</option>
+              <option value="Norm" {% if d.A1Cresult == 'Norm' %}selected{% endif %}>Normal</option>
+              <option value=">7" {% if d.A1Cresult == '>7' %}selected{% endif %}>&gt;7</option>
+              <option value=">8" {% if d.A1Cresult == '>8' %}selected{% endif %}>&gt;8</option>
+            </select>
+          </div>
+
+          <div class="col-md-3">
+            <label class="form-label" for="change">Medication Change</label>
+            <select class="form-select" id="change" name="change">
+              <option value="No" {% if d.change == 'No' %}selected{% endif %}>No</option>
+              <option value="Ch" {% if d.change in ('Ch', 'Yes') %}selected{% endif %}>Yes</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="dc-tool-actions">
+          <button type="submit" class="dc-btn-go" id="submitBtn">
+            <i class="bi bi-person-check"></i>Classify Patient Profile
+          </button>
+          <a href="{{ url_for('clinical.profiles_patient') }}" class="dc-btn-reset">
+            <i class="bi bi-arrow-counterclockwise"></i>Reset Form
+          </a>
+        </div>
+      </form>
+    </div>
+
+  </div>
+</section>
+
+</div>
+
+<script>
+document.querySelectorAll('input[type=range]').forEach(function(slider) {
+  var out = document.getElementById(slider.id + '_v');
+  var sync = function() {
+    if (out) {
+      if (slider.id === 'time_in_hospital') {
+        out.textContent = slider.value + ' days';
+      } else {
+        out.textContent = slider.value;
+      }
+    }
+  };
+  slider.addEventListener('input', sync);
+  sync();
+});
+
+document.querySelectorAll('[data-example]').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    var ex = JSON.parse(btn.getAttribute('data-example'));
+    Object.keys(ex).forEach(function(k) {
+      var el = document.getElementById(k);
+      if (el) {
+        el.value = ex[k];
+        el.dispatchEvent(new Event('input'));
+      }
+    });
+  });
+});
+</script>
+
+{% endblock %}

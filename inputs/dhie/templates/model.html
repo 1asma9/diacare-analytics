@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% block title %}About the model — DiaCare Discharge{% endblock %}
+
+{% block body %}
+<h1>About the model</h1>
+<p class="lead">What it was built on, how well it works, and where it stops being reliable.</p>
+
+<div class="grid g3">
+  <div class="card stat">
+    <b>{{ (metrics.f1_macro * 100)|round(1) }}%</b>
+    <span>Macro F1 (test set, 20 349 stays)</span>
+  </div>
+  <div class="card stat">
+    <b>{{ (metrics.transfert_recall * 100)|round(0)|int }}%</b>
+    <span>Transfers found by binary model (recall)</span>
+  </div>
+  <div class="card stat">
+    <b>{{ metrics.transfert_auc }}</b>
+    <span>Binary transfer AUC-ROC (0.5 = chance)</span>
+  </div>
+</div>
+
+<div class="card">
+  <h2>What the four discharge classes mean</h2>
+  <table>
+    <tr>
+      <th>Class</th>
+      <th>Meaning</th>
+      <th class="n">Share in data</th>
+    </tr>
+    <tr>
+      <td><span class="badge b-domicile">Home</span></td>
+      <td>Discharge to patient's home (code 1)</td>
+      <td class="n">59.2%</td>
+    </tr>
+    <tr>
+      <td><span class="badge b-soins">Home with care</span></td>
+      <td>Discharged home but with home-health services (codes 6, 8)</td>
+      <td class="n">12.8%</td>
+    </tr>
+    <tr>
+      <td><span class="badge b-transfert">Transfer</span></td>
+      <td>Transfer to another facility (codes 2–5, 15, 22–24, 27–30)</td>
+      <td class="n">20.4%</td>
+    </tr>
+    <tr>
+      <td><span class="badge b-autre">Other</span></td>
+      <td>Deceased, left against advice, unknown</td>
+      <td class="n">7.6%</td>
+    </tr>
+  </table>
+</div>
+
+<div class="card">
+  <h2>Models compared (test set — 20 349 stays)</h2>
+  <p class="muted small">Primary metric: macro F1 (treats all 4 classes equally). Secondary: recall on Transfert (the business-critical class).</p>
+  <table>
+    <tr>
+      <th>Model</th>
+      <th class="n">Macro F1</th>
+      <th class="n">Transfer recall</th>
+    </tr>
+    {% for name, f1, rec in comparison %}
+    <tr class="{{ 'hl' if loop.first }}">
+      <td>{{ name }}</td>
+      <td class="n">{{ '%.3f'|format(f1) }}</td>
+      <td class="n">{{ '%.3f'|format(rec) }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  <p class="muted small" style="margin-top:10px">
+    Bootstrap 95% CI for the ensemble macro F1 on the test set:
+    [{{ metrics.ci_low }}, {{ metrics.ci_high }}].
+  </p>
+</div>
+
+<div class="card">
+  <h2>Binary transfer alert</h2>
+  <p>A separate gradient-boosting model is trained exclusively on the question "will this patient be transferred?". A threshold of <b>{{ (thr * 100)|round(1) }}%</b> is chosen on the validation set so that recall is ≥ 70%.</p>
+  <div class="grid g3">
+    <div class="card stat" style="border:1px solid var(--line)">
+      <b>{{ (metrics.transfert_recall * 100)|round(0)|int }}%</b>
+      <span>Transfer recall (binary model)</span>
+    </div>
+    <div class="card stat" style="border:1px solid var(--line)">
+      <b>{{ (metrics.transfert_precision * 100)|round(0)|int }}%</b>
+      <span>Precision (of flagged patients)</span>
+    </div>
+    <div class="card stat" style="border:1px solid var(--line)">
+      <b>{{ metrics.transfert_auc }}</b>
+      <span>AUC-ROC</span>
+    </div>
+  </div>
+  <p class="muted small" style="margin-top:10px">
+    On the test set: 2 924 of 4 147 real transfers detected; 3 410 false alarms.
+    Alert threshold is <b>{{ (thr * 100)|round(1) }}%</b>. Adjust it to match the
+    cost of a missed transfer versus an unnecessary call in your context.
+  </p>
+</div>
+
+<div class="card">
+  <h2>How it works</h2>
+  <p>Dataset: 101 766 diabetic patient stays in 130 US hospitals (1999–2008) from the UCI "Diabetes 130-US hospitals" dataset. Split: 80% train + validation, 20% test (stratified, seed 42). Features: 194 columns after one-hot encoding — stay variables, 21 medications (binary), ICD-9 families, top-40 3-digit codes, admission type/source, medical specialty, payer code, constructed features (visits_prev, labs_per_day, etc.).</p>
+  <p>Final model: ensemble of HistGradientBoosting and RandomForest (300 trees, depth 18) with class weights tuned on validation to maximise macro F1.</p>
+</div>
+
+<div class="note">
+  <b>Limits.</b>
+  The same patient can appear in both train and test (GroupShuffleSplit was not used).
+  <code>sejours_anterieurs</code> uses encounter_id order as a proxy for chronology.
+  "Autre" mixes very different outcomes.
+  Data is US 1999–2008 and may not generalise to other settings or times.
+  Use the score to guide early planning, not as a final discharge decision.
+</div>
+
+{% endblock %}

@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+
+{% block title %}Batch Length of Stay Prediction — DiaCare Analytics{% endblock %}
+
+{% block extra_head %}
+<link href="{{ url_for('static', filename='css/dc-tools.css') }}" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="dc-tool" style="--c:#1558d6;">
+
+<!-- Hero Banner with Clinical Image -->
+<section class="dc-tool-hero">
+  <div class="container" data-aos="fade-up">
+    <div class="dc-tool-hero-card">
+      <div class="dc-tool-hero-text">
+        <div class="dc-tool-pill">
+          <i class="bi bi-file-earmark-spreadsheet"></i> Batch Evaluation &bull; Doctors &amp; Reception
+        </div>
+        <h1 class="dc-tool-title">Cohort Length of Stay Prediction</h1>
+        <p class="dc-tool-desc">
+          Upload patient cohort CSV to forecast inpatients likely to stay over 3 days and assist admissions and bed management teams in ward planning.
+        </p>
+      </div>
+      <div class="dc-tool-hero-media">
+        <img src="{{ url_for('static', filename='img/health/cardiology-1.webp') }}" alt="Batch Length of Stay Prediction">
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Content Section -->
+<section class="dc-tool-body">
+  <div class="container" data-aos="fade-up">
+
+    {% if error %}
+    <div class="dc-alert-err" role="alert">
+      <i class="bi bi-exclamation-triangle-fill"></i>
+      <div>{{ error }}</div>
+    </div>
+    {% endif %}
+
+    <!-- Upload Card -->
+    <div class="dc-tool-card">
+      <div class="dc-tool-card-head">
+        <div>
+          <h2 class="dc-tool-card-title">Upload Patient Cohort CSV</h2>
+          <p class="dc-tool-card-sub">Batch capacity: up to 5,000 patient records per file.</p>
+        </div>
+        <a href="{{ url_for('admission.los_batch_template', version=version) }}" class="dc-btn-dl">
+          <i class="bi bi-download"></i>Download Template ({{ version|replace('_', ' ')|capitalize }})
+        </a>
+      </div>
+
+      <!-- Version Selector -->
+      <div class="mb-3">
+        <label class="form-label">Model Configuration Version:</label>
+        <div class="dc-radios">
+          <div class="form-check">
+            <input class="form-check-input" type="radio" name="version_selector" id="ver_adm" value="admission" {% if version == 'admission' %}checked{% endif %} onchange="window.location.href='{{ url_for('admission.los_batch', version='admission') }}'">
+            <label class="form-check-label" for="ver_adm">
+              <strong>Admission Version</strong> (3 variables: diagnoses, procedures, med change)
+            </label>
+          </div>
+          <div class="form-check">
+            <input class="form-check-input" type="radio" name="version_selector" id="ver_stay" value="after_stay" {% if version == 'after_stay' %}checked{% endif %} onchange="window.location.href='{{ url_for('admission.los_batch', version='after_stay') }}'">
+            <label class="form-check-label" for="ver_stay">
+              <strong>After-Stay Version</strong> (5 variables: adds medications count, lab tests)
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <form method="post" enctype="multipart/form-data" action="{{ url_for('admission.los_batch') }}">
+        <input type="hidden" name="version" value="{{ version }}">
+        <div class="mb-3">
+          <label class="form-label" for="file">Select CSV File</label>
+          <input class="form-control" type="file" id="file" name="file" accept=".csv" required>
+        </div>
+        <div class="dc-req">
+          <strong>Required Columns:</strong> <code>{{ columns|join(', ') }}</code>
+        </div>
+        <button type="submit" class="dc-btn-go">
+          <i class="bi bi-lightning-charge-fill"></i>Predict Cohort Length of Stay
+        </button>
+      </form>
+    </div>
+
+    {% if result %}
+    <!-- Summary Stats Cards -->
+    <div class="row g-3 mb-4">
+      <div class="col-md-4">
+        <div class="dc-stat" style="--k:#1558d6;">
+          <span class="dc-stat-ico"><i class="bi bi-people"></i></span>
+          <div class="dc-stat-label">Patients Evaluated</div>
+          <div class="dc-stat-num">{{ result.summary.n }}</div>
+          <small>Total cohort records processed</small>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="dc-stat" style="--k:#e0483f;">
+          <span class="dc-stat-ico"><i class="bi bi-calendar2-range"></i></span>
+          <div class="dc-stat-label">Predicted Long Stays (&gt;3d)</div>
+          <div class="dc-stat-num">{{ result.summary.long_stays }}</div>
+          <small>Inpatients expected to exceed 3 days</small>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="dc-stat" style="--k:#4f46e5;">
+          <span class="dc-stat-ico"><i class="bi bi-percent"></i></span>
+          <div class="dc-stat-label">Proportion of Long Stays</div>
+          <div class="dc-stat-num">{{ result.summary.pct_long }}%</div>
+          <small>Bed planning threshold: &gt; 3 days</small>
+        </div>
+      </div>
+    </div>
+
+    <!-- Ranked Table Card -->
+    <div class="dc-tool-card">
+      <div class="dc-tool-card-head">
+        <div>
+          <h2 class="dc-tool-card-title">Prioritized Stay Duration List</h2>
+          <p class="dc-tool-card-sub">Sorted by highest probability of long stay (&gt; 3 days).</p>
+        </div>
+        <a href="{{ url_for('admission.los_batch_download') }}" class="dc-btn-dl fill">
+          <i class="bi bi-file-earmark-arrow-down"></i>Download Scored Cohort (CSV)
+        </a>
+      </div>
+
+      <div class="dc-table-wrap table-responsive">
+        <table class="table table-hover align-middle">
+          <thead>
+            <tr>
+              <th scope="col" style="width: 80px;">Rank</th>
+              <th scope="col">Patient Identifier</th>
+              <th scope="col" class="text-center">Prob. Long Stay (&gt;3d)</th>
+              <th scope="col" class="text-center">Predicted Category</th>
+              <th scope="col" class="text-center">Bed Planning Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in result.preview %}
+            <tr>
+              <td class="fw-bold text-muted">#{{ r.rank }}</td>
+              <td class="fw-semibold text-dark">{{ r.id }}</td>
+              <td class="text-center fw-bold">{{ (r.prob_long_stay * 100)|round(1) }}%</td>
+              <td class="text-center">
+                <span class="badge {% if r.alert == 'yes' %}bg-danger{% else %}bg-success{% endif %} px-3 py-1 rounded-pill">
+                  {{ r.predicted_stay }}
+                </span>
+              </td>
+              <td class="text-center">
+                {% if r.alert == 'yes' %}
+                <span class="badge bg-danger-subtle text-danger px-3 py-1 rounded-pill"><i class="bi bi-calendar2-range me-1"></i>Extended Bed Allocation</span>
+                {% else %}
+                <span class="badge bg-success-subtle text-success px-3 py-1 rounded-pill">Short Stay Ward</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% endif %}
+
+  </div>
+</section>
+
+</div>
+{% endblock %}

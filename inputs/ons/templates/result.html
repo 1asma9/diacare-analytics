@@ -1,0 +1,35 @@
+{% extends "base.html" %}{% block title %}Result - DiaCare Analytics{% endblock %}
+{% block body %}
+{% set names = {'low':'Lower risk','elevated':'Elevated risk','high':'High risk'} %}
+{% set colors = {'low':'var(--low)','elevated':'var(--mid)','high':'var(--high)'} %}
+{% set advice = {'low':'Standard discharge instructions are enough. No priority follow-up needed.','elevated':'Plan a follow-up contact (call or appointment) if resources allow.','high':'Prioritise this patient for follow-up soon after discharge.'} %}
+<h1>Result</h1><p class="lead">Estimated chance of a readmission within 30 days, from the information entered.</p>
+<div class="grid g2">
+<div class="card" style="text-align:center">
+ {% set pct = (p*100)|round(1) %}{% set ang = [[p/0.30,1]|min,0]|max %}
+ <svg class="gauge" viewBox="0 0 200 120" role="img" aria-label="Risk {{pct}} percent, {{names[band]}}">
+  <path d="M20 100 A80 80 0 0 1 180 100" fill="none" stroke="var(--line)" stroke-width="16" stroke-linecap="round"/>
+  <path d="M20 100 A80 80 0 0 1 180 100" fill="none" stroke="{{colors[band]}}" stroke-width="16" stroke-linecap="round" pathLength="100" stroke-dasharray="{{ (ang*100)|round(1) }} 100"/>
+  <text x="100" y="92" text-anchor="middle" font-size="30" font-weight="800" fill="var(--ink)">{{pct}}%</text>
+ </svg>
+ <div style="margin-top:6px"><span class="badge b-{{band}}">{{names[band]}}</span></div>
+ <p style="margin:14px 0 0">{{advice[band]}}</p>
+ <p class="muted small">The gauge is full at 30 %. The average patient in the data has {{(base*100)|round(1)}} %.</p>
+</div>
+<div class="card"><h2>What it means</h2>
+ <p>In the test data, <b>{{(rate*100)|round(1)}} %</b> of patients with this level of risk really came back within 30 days ({{(share*100)|round(0)|int}} % of all patients are in this group).</p>
+ <p>That is <b>{{ (rate/base)|round(1) }}x</b> the average rate of {{(base*100)|round(1)}} %.</p>
+ <div class="bar" aria-hidden="true"><i style="width:{{[rate*100*3,100]|min}}%"></i></div>
+ <p class="muted small" style="margin-top:8px">Threshold for follow-up: {{(thr*100)|round(1)}} %. Chosen on the training data to catch as many early readmissions as possible (about {{(m.recall*100)|round(0)|int}} % on the test data) while keeping at least 62 % of all predictions correct.</p>
+</div></div>
+<div class="card"><h2>What pushes the score up or down</h2>
+ <p class="muted small">Compared with an average patient (logistic-regression coefficients of the model). Right = more risk.</p>
+ {% set mx = (factors|map(attribute='effect')|map('abs')|max) if factors else 1 %}
+ {% for f in factors %}<div class="factor"><div><b>{{f.field}}</b></div>
+  <div class="fbar"><span class="mid"></span>{% if f.effect>0 %}<i style="left:50%;width:{{ (f.effect/mx*50)|round(1) }}%;background:var(--high)"></i>{% else %}<i style="right:50%;width:{{ (-f.effect/mx*50)|round(1) }}%;background:var(--low)"></i>{% endif %}</div>
+  <div class="small muted" style="text-align:right">{{f.value}}</div></div>{% endfor %}
+ {% if not factors %}<p>Every field is close to the average patient.</p>{% endif %}
+</div>
+<div class="note"><b>Read this with care.</b> The model separates patients only moderately (AUC {{m.auc_roc|round(2)}}). Most people flagged will not come back, and some who are not flagged will. Use it to prioritise follow-up, never to decide alone. The factors are associations in past data, not causes: for example, a measured HbA1c goes with a lower risk here, but this does not prove that measuring it lowers the risk.</div>
+<div class="btns" style="margin-top:18px"><a class="btn" href="/">New patient</a><button class="btn ghost" onclick="window.print()">Print</button></div>
+{% endblock %}

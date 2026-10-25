@@ -1,0 +1,529 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard — DiaCare Analytics{% endblock %}
+
+{% block extra_head %}
+<style>
+  /* ============================================================
+     DiaCare Analytics — Dashboard (styles scopés : dc-dash-*)
+     ============================================================ */
+  .dc-dash {
+    --dc-blue: var(--accent-color, #1a5fd8);
+    --dc-navy: #0b2a6f;
+    --dc-mid: #1558d6;
+    --dc-light: #3b8bff;
+    --dc-ink: #0f1f3d;
+    --dc-muted: #64748b;
+    --dc-line: #e3e9f3;
+    overflow: hidden;
+  }
+  .dc-dash section { position: relative; }
+
+  /* ---------- Hero ---------- */
+  .dc-dash-hero { padding: 36px 0 18px; }
+  .dc-dash-hero-card {
+    position: relative;
+    display: grid;
+    grid-template-columns: 1.15fr 1fr;
+    align-items: center;
+    gap: 24px;
+    padding: 44px;
+    background: #fff;
+    border-radius: 28px;
+    box-shadow: 0 30px 60px -28px rgba(11, 42, 111, 0.35), 0 6px 20px rgba(11, 42, 111, 0.06);
+    overflow: hidden;
+  }
+  .dc-dash-hero-card::before {
+    content: ""; position: absolute; width: 380px; height: 380px; top: -170px; left: -120px;
+    border-radius: 50%; background: radial-gradient(circle, rgba(59,139,255,.22), transparent 70%);
+  }
+  .dc-dash-hero-card::after {
+    content: ""; position: absolute; width: 300px; height: 300px; bottom: -150px; right: 28%;
+    border-radius: 50%; background: radial-gradient(circle, rgba(21,88,214,.14), transparent 70%);
+  }
+  .dc-dash-hero-text { position: relative; z-index: 2; }
+  .dc-dash-pill {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 7px 16px; margin-bottom: 18px;
+    border-radius: 999px; background: #e8f0ff; color: var(--dc-blue);
+    font-weight: 700; font-size: .85rem;
+  }
+  .dc-dash-pill i { animation: dcDashBeat 2.2s ease-in-out infinite; }
+  .dc-dash-title {
+    font-family: "Montserrat", sans-serif; font-weight: 800;
+    font-size: clamp(1.9rem, 3.4vw, 2.7rem); line-height: 1.12; margin: 0 0 14px;
+    background: linear-gradient(120deg, var(--dc-navy), var(--dc-mid) 60%, var(--dc-light));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .dc-dash-welcome { font-size: 1.1rem; color: var(--dc-muted); margin: 0 0 14px; }
+  .dc-dash-welcome strong { color: var(--dc-ink); }
+  .dc-dash-desc { color: var(--dc-muted); font-size: .95rem; line-height: 1.65; margin: 0; max-width: 560px; }
+
+  .dc-dash-hero-media { position: relative; z-index: 2; padding: 14px; }
+  .dc-dash-hero-media::before {
+    content: ""; position: absolute; inset: 0; border-radius: 26px;
+    background: linear-gradient(135deg, var(--dc-light), var(--dc-navy)); transform: rotate(3deg); opacity: .9;
+  }
+  .dc-dash-hero-media img {
+    position: relative; display: block; width: 100%; height: 250px; object-fit: cover;
+    border-radius: 20px; border: 4px solid #fff; box-shadow: 0 18px 36px -14px rgba(11,42,111,.55);
+    transition: transform .4s ease;
+  }
+  .dc-dash-hero-media:hover img { transform: scale(1.02) rotate(-.6deg); }
+
+  /* ---------- KPIs ---------- */
+  .dc-dash-kpis { padding: 18px 0 30px; }
+  .dc-dash-kpi {
+    --k: var(--dc-mid);
+    position: relative; height: 100%; padding: 24px 22px 20px;
+    background: #fff; border-radius: 20px; overflow: hidden;
+    box-shadow: 0 14px 30px -18px rgba(11,42,111,.4);
+    transition: transform .3s ease, box-shadow .3s ease;
+  }
+  .dc-dash-kpi::before { content: ""; position: absolute; left: 0; top: 0; width: 100%; height: 5px; background: var(--k); }
+  .dc-dash-kpi:hover { transform: translateY(-6px); box-shadow: 0 24px 38px -18px rgba(11,42,111,.5); }
+  .dc-dash-kpi-ico {
+    width: 46px; height: 46px; border-radius: 14px; margin-bottom: 14px;
+    display: inline-flex; align-items: center; justify-content: center; font-size: 1.3rem;
+    color: var(--k); background: color-mix(in srgb, var(--k), transparent 88%);
+  }
+  .dc-dash-kpi-num {
+    font-family: "Montserrat", sans-serif; font-weight: 800; font-size: 2.2rem; line-height: 1; color: var(--k);
+  }
+  .dc-dash-kpi-label { margin-top: 8px; font-weight: 700; font-size: .92rem; color: var(--dc-ink); }
+  .dc-dash-kpi small { display: block; margin-top: 2px; color: var(--dc-muted); font-size: .78rem; }
+
+  /* ---------- Titres de section ---------- */
+  .dc-dash-head { text-align: center; max-width: 760px; margin: 0 auto 42px; }
+  .dc-dash-eyebrow {
+    display: inline-flex; align-items: center; gap: 8px; margin-bottom: 12px;
+    padding: 6px 14px; border-radius: 999px; font-size: .75rem; font-weight: 700;
+    letter-spacing: .08em; text-transform: uppercase;
+  }
+  .dc-dash-head h2 {
+    font-family: "Montserrat", sans-serif; font-weight: 800;
+    font-size: clamp(1.6rem, 2.8vw, 2.2rem); margin: 0 0 12px;
+  }
+  .dc-dash-head p { margin: 0; font-size: 1rem; line-height: 1.6; }
+
+  /* ---------- Section 1 : Admission & Planning ---------- */
+  .dc-dash-plan {
+    padding: 70px 0 80px;
+    background: linear-gradient(180deg, #f3f8ff 0%, #e6effd 100%);
+  }
+  .dc-dash-plan::before {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background-image: radial-gradient(rgba(21,88,214,.10) 1.4px, transparent 1.4px);
+    background-size: 26px 26px;
+    -webkit-mask-image: linear-gradient(180deg, #000, transparent 70%);
+            mask-image: linear-gradient(180deg, #000, transparent 70%);
+  }
+  .dc-dash-plan .dc-dash-eyebrow { background: #dce9ff; color: var(--dc-blue); }
+  .dc-dash-plan .dc-dash-head h2 { color: var(--dc-ink); }
+  .dc-dash-plan .dc-dash-head p { color: var(--dc-muted); }
+
+  .dc-dash-card {
+    --c: var(--dc-mid);
+    position: relative; height: 100%; padding: 28px 26px 24px;
+    background: #fff; border-radius: 22px; overflow: hidden;
+    display: flex; flex-direction: column;
+    box-shadow: 0 16px 34px -20px rgba(11,42,111,.45);
+    transition: transform .3s ease, box-shadow .3s ease;
+  }
+  .dc-dash-card::before {
+    content: ""; position: absolute; left: 0; top: 0; height: 100%; width: 5px; background: var(--c);
+    transition: width .3s ease;
+  }
+  .dc-dash-card:hover { transform: translateY(-7px); box-shadow: 0 28px 44px -20px rgba(11,42,111,.55); }
+  .dc-dash-card:hover::before { width: 9px; }
+  .dc-dash-card-head { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; }
+  .dc-dash-card-ico {
+    flex-shrink: 0; width: 56px; height: 56px; border-radius: 16px;
+    display: inline-flex; align-items: center; justify-content: center; font-size: 1.6rem;
+    color: #fff; background: linear-gradient(135deg, var(--c), color-mix(in srgb, var(--c), #fff 35%));
+    box-shadow: 0 10px 18px -8px var(--c);
+    transition: transform .3s ease;
+  }
+  .dc-dash-card:hover .dc-dash-card-ico { transform: rotate(-8deg) scale(1.08); }
+  .dc-dash-card h3 { margin: 0; font-family: "Montserrat", sans-serif; font-weight: 800; font-size: 1.18rem; color: var(--dc-ink); }
+  .dc-dash-card-sub { display: block; margin-top: 2px; font-size: .82rem; color: var(--dc-muted); }
+  .dc-dash-card p { flex: 1; margin: 0 0 22px; font-size: .9rem; line-height: 1.65; color: var(--dc-muted); }
+  .dc-dash-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+
+  .dc-dash-btn {
+    display: inline-flex; align-items: center; gap: 7px; padding: 9px 18px;
+    border-radius: 12px; font-size: .88rem; font-weight: 700; text-decoration: none;
+    transition: all .2s ease;
+  }
+  .dc-dash-btn-main { color: #fff; background: linear-gradient(135deg, var(--dc-mid), var(--dc-light)); box-shadow: 0 10px 18px -8px rgba(21,88,214,.7); }
+  .dc-dash-btn-main:hover { color: #fff; transform: translateY(-2px); filter: brightness(1.06); }
+  .dc-dash-btn-ghost { color: var(--dc-ink); background: #f1f5fb; border: 1.5px solid var(--dc-line); }
+  .dc-dash-btn-ghost:hover { color: var(--dc-blue); background: #fff; border-color: var(--dc-blue); transform: translateY(-2px); }
+
+  /* ---------- Section 2 : Clinical Tools (sombre) ---------- */
+  .dc-dash-clin {
+    padding: 80px 0 90px;
+    background: linear-gradient(160deg, #071a47 0%, #0b2a6f 55%, #123f9e 100%);
+  }
+  .dc-dash-clin::before, .dc-dash-clin::after {
+    content: ""; position: absolute; border-radius: 50%; pointer-events: none;
+  }
+  .dc-dash-clin::before { width: 420px; height: 420px; top: -180px; right: -120px; background: radial-gradient(circle, rgba(59,139,255,.35), transparent 70%); }
+  .dc-dash-clin::after { width: 360px; height: 360px; bottom: -160px; left: -100px; background: radial-gradient(circle, rgba(110,165,245,.25), transparent 70%); }
+  .dc-dash-clin .container { position: relative; z-index: 2; }
+  .dc-dash-clin .dc-dash-eyebrow { background: rgba(255,255,255,.12); color: #bfe0ff; border: 1px solid rgba(255,255,255,.2); }
+  .dc-dash-clin .dc-dash-head h2 { color: #fff; }
+  .dc-dash-clin .dc-dash-head p { color: rgba(255,255,255,.78); }
+
+  .dc-dash-clin .dc-dash-card {
+    background: rgba(255,255,255,.07);
+    border: 1px solid rgba(255,255,255,.16);
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    box-shadow: 0 20px 40px -24px rgba(0,0,0,.6);
+  }
+  .dc-dash-clin .dc-dash-card:hover { background: rgba(255,255,255,.12); border-color: rgba(255,255,255,.34); }
+  .dc-dash-clin .dc-dash-card h3 { color: #fff; }
+  .dc-dash-clin .dc-dash-card-sub { color: rgba(255,255,255,.65); }
+  .dc-dash-clin .dc-dash-card p { color: rgba(255,255,255,.8); }
+  .dc-dash-clin .dc-dash-btn-main { color: var(--dc-navy); background: #fff; box-shadow: 0 10px 18px -8px rgba(0,0,0,.45); }
+  .dc-dash-clin .dc-dash-btn-main:hover { color: var(--dc-mid); }
+  .dc-dash-clin .dc-dash-btn-ghost { color: #fff; background: transparent; border-color: rgba(255,255,255,.4); }
+  .dc-dash-clin .dc-dash-btn-ghost:hover { color: var(--dc-navy); background: #fff; border-color: #fff; }
+
+  /* ---------- Section 3 : Comprehensive Evaluation ---------- */
+  .dc-dash-eval { padding: 80px 0 90px; background: #fff; }
+  .dc-dash-eval .dc-dash-eyebrow { background: #e8f0ff; color: var(--dc-blue); }
+  .dc-dash-eval .dc-dash-head h2 { color: var(--dc-ink); }
+  .dc-dash-eval .dc-dash-head p { color: var(--dc-muted); }
+
+  .dc-dash-banner {
+    position: relative; display: grid; grid-template-columns: 1.6fr 1fr; align-items: center; gap: 28px;
+    padding: 46px; border-radius: 30px; color: #fff; overflow: hidden;
+    background: linear-gradient(125deg, var(--dc-navy) 0%, var(--dc-mid) 55%, var(--dc-light) 100%);
+    box-shadow: 0 34px 60px -26px rgba(11,42,111,.7);
+  }
+  .dc-dash-banner::before {
+    content: ""; position: absolute; width: 340px; height: 340px; top: -150px; right: -80px;
+    border-radius: 50%; background: rgba(255,255,255,.1);
+  }
+  .dc-dash-banner::after {
+    content: ""; position: absolute; width: 220px; height: 220px; bottom: -110px; left: 34%;
+    border-radius: 50%; background: rgba(255,255,255,.08);
+  }
+  .dc-dash-banner > * { position: relative; z-index: 2; }
+  .dc-dash-banner-head { display: flex; align-items: center; gap: 16px; margin-bottom: 18px; }
+  .dc-dash-banner-ico {
+    flex-shrink: 0; width: 62px; height: 62px; border-radius: 18px; font-size: 1.9rem;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: rgba(255,255,255,.18); border: 1px solid rgba(255,255,255,.32);
+    animation: dcDashFloat 4.5s ease-in-out infinite;
+  }
+  .dc-dash-banner h3 { margin: 0; font-family: "Montserrat", sans-serif; font-weight: 800; font-size: 1.5rem; color: #fff; }
+  .dc-dash-banner-sub { display: block; margin-top: 2px; font-size: .88rem; color: rgba(255,255,255,.8); }
+  .dc-dash-banner p { margin: 0; font-size: .96rem; line-height: 1.7; color: rgba(255,255,255,.88); }
+  .dc-dash-banner-cta { text-align: right; }
+  .dc-dash-btn-white {
+    display: inline-flex; align-items: center; gap: 10px; padding: 16px 28px;
+    border-radius: 16px; background: #fff; color: var(--dc-navy); font-weight: 800; font-size: 1.02rem;
+    text-decoration: none; box-shadow: 0 18px 30px -12px rgba(0,0,0,.45);
+    transition: transform .25s ease, box-shadow .25s ease;
+  }
+  .dc-dash-btn-white i { transition: transform .25s ease; }
+  .dc-dash-btn-white:hover { color: var(--dc-mid); transform: translateY(-4px); box-shadow: 0 24px 36px -12px rgba(0,0,0,.5); }
+  .dc-dash-btn-white:hover i { transform: translateX(5px); }
+
+  /* ---------- Animations ---------- */
+  @keyframes dcDashBeat { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.22); } }
+  @keyframes dcDashFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+  @media (prefers-reduced-motion: reduce) {
+    .dc-dash-pill i, .dc-dash-banner-ico { animation: none !important; }
+    .dc-dash * { transition: none !important; }
+  }
+
+  /* ---------- Responsive ---------- */
+  @media (max-width: 991.98px) {
+    .dc-dash-hero-card { grid-template-columns: 1fr; padding: 32px 26px; }
+    .dc-dash-hero-media img { height: 220px; }
+    .dc-dash-banner { grid-template-columns: 1fr; padding: 34px 26px; }
+    .dc-dash-banner-cta { text-align: left; }
+  }
+  @media (max-width: 575.98px) {
+    .dc-dash-hero { padding-top: 20px; }
+    .dc-dash-hero-card { border-radius: 22px; padding: 26px 20px; }
+    .dc-dash-plan, .dc-dash-clin, .dc-dash-eval { padding: 54px 0 60px; }
+    .dc-dash-banner { border-radius: 22px; }
+    .dc-dash-btn-white { width: 100%; justify-content: center; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dc-dash">
+
+<!-- Dashboard Hero with Clinical Image -->
+<section class="dc-dash-hero">
+  <div class="container" data-aos="fade-up">
+    <div class="dc-dash-hero-card">
+      <div class="dc-dash-hero-text">
+        <div class="dc-dash-pill">
+          <i class="bi bi-hospital"></i> Hospital Decision Support
+        </div>
+        <h1 class="dc-dash-title">DiaCare Analytics Dashboard</h1>
+        <p class="dc-dash-welcome">
+          Welcome, <strong>{{ current_user.name }}</strong> &mdash; {{ current_user.role_title }}
+        </p>
+        <p class="dc-dash-desc">
+          Unified multi-model platform supporting diabetic patient care across admissions, bed planning, discharge logistics, medication assessment, and readmission screening.
+        </p>
+      </div>
+      <div class="dc-dash-hero-media">
+        <img src="{{ url_for('static', filename='img/health/laboratory-3.webp') }}"
+             alt="Clinical Laboratory Analytics">
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Dashboard Cohort KPIs -->
+<section class="dc-dash-kpis">
+  <div class="container" data-aos="fade-up">
+    <div class="row g-3">
+      <div class="col-lg-3 col-sm-6">
+        <div class="dc-dash-kpi" style="--k:#1558d6;">
+          <span class="dc-dash-kpi-ico"><i class="bi bi-people"></i></span>
+          <div class="dc-dash-kpi-num">69,970</div>
+          <div class="dc-dash-kpi-label">Inpatient Stays Cohort</div>
+          <small>UCI Diabetes 130-US Hospitals</small>
+        </div>
+      </div>
+      <div class="col-lg-3 col-sm-6">
+        <div class="dc-dash-kpi" style="--k:#0e9aa7;">
+          <span class="dc-dash-kpi-ico"><i class="bi bi-clock-history"></i></span>
+          <div class="dc-dash-kpi-num">4.3d</div>
+          <div class="dc-dash-kpi-label">Median Length of Stay</div>
+          <small>Benchmark Hospital Baseline</small>
+        </div>
+      </div>
+      <div class="col-lg-3 col-sm-6">
+        <div class="dc-dash-kpi" style="--k:#e0483f;">
+          <span class="dc-dash-kpi-ico"><i class="bi bi-activity"></i></span>
+          <div class="dc-dash-kpi-num">8.2%</div>
+          <div class="dc-dash-kpi-label">High-Risk Decision Cutoff</div>
+          <small>Calibrated 30d Readmission</small>
+        </div>
+      </div>
+      <div class="col-lg-3 col-sm-6">
+        <div class="dc-dash-kpi" style="--k:#276ef3;">
+          <span class="dc-dash-kpi-ico"><i class="bi bi-cpu"></i></span>
+          <div class="dc-dash-kpi-num">6</div>
+          <div class="dc-dash-kpi-label">Active ML Models</div>
+          <small>Unified Decision Support</small>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 1. Admission & Planning Tools (Accessible to both Doctors and Reception) -->
+<section class="dc-dash-plan">
+  <div class="container">
+
+    <div class="dc-dash-head" data-aos="fade-up">
+      <span class="dc-dash-eyebrow"><i class="bi bi-calendar2-check"></i> Doctors &amp; Reception</span>
+      <h2>Admission &amp; Planning</h2>
+      <p>Tools for managing patient flow, bed allocation, discharge coordination, and medication load assessment.</p>
+    </div>
+
+    <div class="row gy-4">
+
+      <!-- Length of Stay (Asma) -->
+      <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="100">
+        <div class="dc-dash-card" style="--c:#1558d6;">
+          <div class="dc-dash-card-head">
+            <span class="dc-dash-card-ico"><i class="bi bi-calendar-range"></i></span>
+            <div>
+              <h3>Length of Stay</h3>
+              <span class="dc-dash-card-sub">Asma's prediction model</span>
+            </div>
+          </div>
+          <p>Predicts whether an inpatient stay will exceed 3 days. Supports early discharge planning and hospital bed allocation.</p>
+          <div class="dc-dash-actions">
+            <a href="{{ url_for('admission.los_single') }}" class="dc-dash-btn dc-dash-btn-main">
+              <i class="bi bi-person"></i> Single
+            </a>
+            <a href="{{ url_for('admission.los_batch') }}" class="dc-dash-btn dc-dash-btn-ghost">
+              <i class="bi bi-people"></i> Several
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Discharge Destination (Dhie) -->
+      <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="200">
+        <div class="dc-dash-card" style="--c:#0e9aa7;">
+          <div class="dc-dash-card-head">
+            <span class="dc-dash-card-ico"><i class="bi bi-box-arrow-right"></i></span>
+            <div>
+              <h3>Discharge Destination</h3>
+              <span class="dc-dash-card-sub">Dhie's prediction model</span>
+            </div>
+          </div>
+          <p>Predicts discharge to Home, Home with care, or Transfer. Triggers dedicated transfer alerts to coordinate post-acute care early.</p>
+          <div class="dc-dash-actions">
+            <a href="{{ url_for('admission.discharge_single') }}" class="dc-dash-btn dc-dash-btn-main">
+              <i class="bi bi-person"></i> Single
+            </a>
+            <a href="{{ url_for('admission.discharge_batch') }}" class="dc-dash-btn dc-dash-btn-ghost">
+              <i class="bi bi-people"></i> Several
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Medication Load (Roua) - Accessible to both Reception & Doctors -->
+      <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="300">
+        <div class="dc-dash-card" style="--c:#4f46e5;">
+          <div class="dc-dash-card-head">
+            <span class="dc-dash-card-ico"><i class="bi bi-capsule-pill"></i></span>
+            <div>
+              <h3>Medication Load</h3>
+              <span class="dc-dash-card-sub">Roua's XGBoost model</span>
+            </div>
+          </div>
+          <p>Classifies drug regimen complexity into Low (&le;11), Medium (12&ndash;17), or High (&ge;18 drugs) to prioritise pharmacy reconciliation.</p>
+          <div class="dc-dash-actions">
+            <a href="{{ url_for('clinical.medication_single') }}" class="dc-dash-btn dc-dash-btn-main">
+              <i class="bi bi-person"></i> Single
+            </a>
+            <a href="{{ url_for('clinical.medication_batch') }}" class="dc-dash-btn dc-dash-btn-ghost">
+              <i class="bi bi-table"></i> Several
+            </a>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- 2. Clinical Tools (Doctors Only) -->
+{% if current_user.role == 'doctor' %}
+<section class="dc-dash-clin">
+  <div class="container">
+
+    <div class="dc-dash-head" data-aos="fade-up">
+      <span class="dc-dash-eyebrow"><i class="bi bi-heart-pulse"></i> Doctors only</span>
+      <h2>Clinical Tools</h2>
+      <p>Specialized predictive analytics for attending physicians. Supports readmission screening, glycaemic management, and patient profiling.</p>
+    </div>
+
+    <div class="row gy-4">
+
+      <!-- Readmission Screening (Seif) -->
+      <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="100">
+        <div class="dc-dash-card" style="--c:#ff5a5f;">
+          <div class="dc-dash-card-head">
+            <span class="dc-dash-card-ico"><i class="bi bi-arrow-repeat"></i></span>
+            <div>
+              <h3>Readmission Screening</h3>
+              <span class="dc-dash-card-sub">Seif's stacking model</span>
+            </div>
+          </div>
+          <p>Estimates readmission probability within 30 days with an 8.2% follow-up threshold. Ranks patients to prioritise outreach.</p>
+          <div class="dc-dash-actions">
+            <a href="{{ url_for('clinical.readmission_single') }}" class="dc-dash-btn dc-dash-btn-main">
+              <i class="bi bi-person"></i> Single
+            </a>
+            <a href="{{ url_for('clinical.readmission_batch') }}" class="dc-dash-btn dc-dash-btn-ghost">
+              <i class="bi bi-table"></i> Several
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- HbA1c & Treatment (Ons) -->
+      <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="200">
+        <div class="dc-dash-card" style="--c:#a78bfa;">
+          <div class="dc-dash-card-head">
+            <span class="dc-dash-card-ico"><i class="bi bi-droplet-half"></i></span>
+            <div>
+              <h3>HbA1c &amp; Treatment</h3>
+              <span class="dc-dash-card-sub">Ons's logistic regression</span>
+            </div>
+          </div>
+          <p>Analyzes how inpatient HbA1c measurement is associated with reduced readmission odds (OR &approx; 0.90) to guide glycemic testing.</p>
+          <div class="dc-dash-actions">
+            <a href="{{ url_for('clinical.hba1c_single') }}" class="dc-dash-btn dc-dash-btn-main">
+              <i class="bi bi-person"></i> Single
+            </a>
+            <a href="{{ url_for('clinical.hba1c_batch') }}" class="dc-dash-btn dc-dash-btn-ghost">
+              <i class="bi bi-table"></i> Several
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Patient Profiles (Moez) -->
+      <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="300">
+        <div class="dc-dash-card" style="--c:#38bdf8;">
+          <div class="dc-dash-card-head">
+            <span class="dc-dash-card-ico"><i class="bi bi-pie-chart"></i></span>
+            <div>
+              <h3>Patient Profiles</h3>
+              <span class="dc-dash-card-sub">Moez's K-Means clustering</span>
+            </div>
+          </div>
+          <p>Unsupervised clustering partitioning stays into Profile 0 (~62%) and Profile 1 (~38%) to understand patient subgroups.</p>
+          <div class="dc-dash-actions">
+            <a href="{{ url_for('clinical.profiles_info') }}" class="dc-dash-btn dc-dash-btn-main">
+              The two profiles
+            </a>
+            <a href="{{ url_for('clinical.profiles_patient') }}" class="dc-dash-btn dc-dash-btn-ghost">
+              Patient fit
+            </a>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<!-- 3. Unified Patient Report (Positioned underneath all other tools) -->
+<section class="dc-dash-eval">
+  <div class="container">
+
+    <div class="dc-dash-head" data-aos="fade-up">
+      <span class="dc-dash-eyebrow"><i class="bi bi-clipboard2-pulse"></i> All models</span>
+      <h2>Comprehensive Evaluation</h2>
+      <p>Single master patient profile running all models with integrated recommendations.</p>
+    </div>
+
+    <div data-aos="fade-up" data-aos-delay="100">
+      <div class="dc-dash-banner">
+        <div>
+          <div class="dc-dash-banner-head">
+            <span class="dc-dash-banner-ico"><i class="bi bi-file-earmark-person"></i></span>
+            <div>
+              <h3>Patient Report</h3>
+              <span class="dc-dash-banner-sub">A concluive report concerning the patient's health</span>
+            </div>
+          </div>
+          <p>
+            Enter a patient's complete inpatient record once to obtain simultaneous predictions across all applicable models: Length of Stay, Discharge Destination, Medication Complexity, Readmission Risk, HbA1c Decision, and Cluster Assignment &mdash; alongside combined clinical rule recommendations.
+          </p>
+        </div>
+        <div class="dc-dash-banner-cta">
+          <a href="{{ url_for('main.patient_summary') }}" class="dc-dash-btn-white">
+            <i class="bi bi-arrow-right-circle"></i> Open Patient Report
+          </a>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+</div>
+{% endblock %}

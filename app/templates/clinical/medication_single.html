@@ -1,0 +1,653 @@
+{% extends "base.html" %}
+
+{% block title %}Medication Load Assessment — DiaCare Analytics{% endblock %}
+
+{% block extra_head %}
+<link href="{{ url_for('static', filename='css/dc-tools.css') }}" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="dc-tool" style="--c:#1558d6;">
+
+<!-- Hero Banner with Clinical Image -->
+<section class="dc-tool-hero">
+  <div class="container" data-aos="fade-up">
+    <div class="dc-tool-hero-card">
+      <div class="dc-tool-hero-text">
+        <div class="dc-tool-pill">
+          <i class="bi bi-capsule"></i> Clinical Tools &bull; Doctors &amp; Reception
+        </div>
+        <h1 class="dc-tool-title">Medication Load & Polypharmacy Assessment</h1>
+        <p class="dc-tool-desc">
+          XGBoost model evaluating medication burden and polypharmacy risk across three tiers (Low &le;11, Moderate 12–17, High &ge;18 drugs) to support clinical pharmacist reconciliation.
+        </p>
+        <div class="dc-tool-chips">
+          <span class="dc-tool-chip"><i class="bi bi-cpu"></i>XGBoost Multiclass</span>
+          <span class="dc-tool-chip"><i class="bi bi-bar-chart-fill"></i>3 Burden Tiers</span>
+          <span class="dc-tool-chip"><i class="bi bi-check2-circle"></i>Admission &amp; Post-Stay</span>
+        </div>
+      </div>
+      <div class="dc-tool-hero-media">
+        <img src="{{ url_for('static', filename='img/health/emergency-1.webp') }}" alt="Hospital Pharmacotherapy and Medication Management">
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Content Section -->
+<section class="dc-tool-body">
+  <div class="container" data-aos="fade-up">
+
+    {% if errors %}
+    <div class="dc-alert-err" role="alert">
+      <i class="bi bi-exclamation-triangle-fill"></i>
+      <div>
+        <h6>Please review the following inputs:</h6>
+        <ul>
+          {% for e in errors %}<li>{{ e }}</li>{% endfor %}
+        </ul>
+      </div>
+    </div>
+    {% endif %}
+
+    {% if result %}
+    <!-- RESULT CARD -->
+    <div class="dc-res">
+      <div class="dc-res-head">
+        <div>
+          <span class="dc-res-badge"><i class="bi bi-check2-circle"></i>Assessment Complete</span>
+          <h2 class="dc-res-title">Estimated Medication Load Tier</h2>
+        </div>
+        <div class="dc-res-btns">
+          <button type="button" class="dc-btn-ghost" onclick="window.print()">
+            <i class="bi bi-printer"></i>Print Report
+          </button>
+          <a href="{{ url_for('clinical.medication_single') }}" class="dc-btn-solid">
+            <i class="bi bi-plus-circle"></i>New Patient
+          </a>
+        </div>
+      </div>
+
+      <div class="dc-res-body">
+        <div class="dc-res-grid">
+          <!-- Predicted Tier Column -->
+          <div class="dc-res-left">
+            <div class="dc-label">Predicted Pharmacological Load</div>
+            <div class="dc-bigval" style="color: {{ result.color }};">
+              {{ result.title }}
+            </div>
+            <div>
+              <span class="badge {{ result.badge }} fs-6 px-3 py-2 rounded-pill">
+                {{ result.description }}
+              </span>
+            </div>
+
+            <div class="dc-note">
+              <strong>Clinical Pharmacist Recommendation:</strong>
+              <p>{{ result.advice }}</p>
+            </div>
+          </div>
+
+          <!-- Probabilities Distribution -->
+          <div>
+            <div class="dc-res-h">
+              <span><i class="bi bi-bar-chart-fill"></i>Class Probability Distribution</span>
+              <span class="dc-cut">3-Tier Polypharmacy Scale</span>
+            </div>
+
+            <div class="dc-bar-row">
+              <div class="dc-bar-top">
+                <span style="color: #0284c7;"><i class="bi bi-check-circle me-1"></i>Low Load (&le; 11 medications)</span>
+                <span class="dc-pct">{{ result.probs_percent.low }}%</span>
+              </div>
+              <div class="progress" style="height: 10px; border-radius: 6px;">
+                <div class="progress-bar" role="progressbar" style="width: {{ result.probs_percent.low }}%; background-color: #0ea5e9;" aria-valuenow="{{ result.probs_percent.low }}" aria-valuemin="0" aria-valuemax="100"></div>
+              </div>
+            </div>
+
+            <div class="dc-bar-row">
+              <div class="dc-bar-top">
+                <span style="color: #175cdd;"><i class="bi bi-exclamation-circle me-1"></i>Moderate Polypharmacy (12–17 medications)</span>
+                <span class="dc-pct">{{ result.probs_percent.medium }}%</span>
+              </div>
+              <div class="progress" style="height: 10px; border-radius: 6px;">
+                <div class="progress-bar" role="progressbar" style="width: {{ result.probs_percent.medium }}%; background-color: #175cdd;" aria-valuenow="{{ result.probs_percent.medium }}" aria-valuemin="0" aria-valuemax="100"></div>
+              </div>
+            </div>
+
+            <div class="dc-bar-row">
+              <div class="dc-bar-top">
+                <span style="color: #dc3545;"><i class="bi bi-exclamation-triangle-fill me-1"></i>High Polypharmacy Risk (&ge; 18 medications)</span>
+                <span class="dc-pct">{{ result.probs_percent.high }}%</span>
+              </div>
+              <div class="progress" style="height: 10px; border-radius: 6px;">
+                <div class="progress-bar" role="progressbar" style="width: {{ result.probs_percent.high }}%; background-color: #dc3545;" aria-valuenow="{{ result.probs_percent.high }}" aria-valuemin="0" aria-valuemax="100"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Short Interpretation of Results (Below Results) -->
+        <div class="dc-interp">
+          <div class="dc-interp-t"><i class="bi bi-info-circle-fill"></i>Clinical Interpretation:</div>
+          <p>
+            {% set tier = result.tier or result.pred %}
+            {% if tier == 'high' %}
+              Patient is classified with <strong>High Polypharmacy Risk (&ge; 18 medications)</strong> at <strong>{{ result.probs_percent.high }}%</strong> confidence. Comprehensive clinical pharmacist review is indicated before discharge to screen for drug-drug interactions, duplicate therapies, and renal-hepatic clearance contraindications.
+            {% elif tier == 'medium' %}
+              Patient is classified with <strong>Moderate Pharmacological Load (12–17 medications)</strong> at <strong>{{ result.probs_percent.medium }}%</strong> confidence. Monitor therapeutic complexity and reconcile oral hypoglycemics with insulin regimens during inpatient stay.
+            {% else %}
+              Patient is classified with <strong>Low Pharmacological Load (&le; 11 medications)</strong> at <strong>{{ result.probs_percent.low }}%</strong> confidence. Regimen aligns with standard glycemic management; perform routine medication reconciliation at discharge.
+            {% endif %}
+          </p>
+        </div>
+
+        <!-- Advisory Banner -->
+        <div class="dc-advisory">
+          <i class="bi bi-info-circle-fill"></i>
+          <div>
+            <strong>Decision Support Advisory:</strong> DiaCare models assist clinical prioritization and transitional care allocation. They do not constitute diagnostic or prescriptive orders. Always consider the full clinical context.
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    {# ── Phase 6: FDA Drug Label Reference Panel (Doctors only) ─────────────── #}
+    {% if current_user and current_user.role == 'doctor' %}
+    <div class="dc-tool-card" id="fdaReferenceCard">
+      <div class="dc-tool-card-head mb-0 pb-0 border-0"
+           style="cursor: pointer;"
+           data-bs-toggle="collapse"
+           data-bs-target="#fdaPanelBody"
+           aria-expanded="{{ 'true' if result and (result.tier or result.pred) == 'high' else 'false' }}"
+           aria-controls="fdaPanelBody"
+           id="fdaPanelToggle">
+        <div class="d-flex align-items-center gap-3">
+          <div class="d-flex align-items-center justify-content-center flex-shrink-0"
+               style="width: 44px; height: 44px; border-radius: 12px; background: color-mix(in srgb, var(--c), transparent 88%);">
+            <i class="bi bi-journal-medical fs-5" style="color: var(--c);"></i>
+          </div>
+          <div>
+            <h2 class="dc-tool-card-title mb-0">Drug Reference (FDA Label)</h2>
+            <p class="dc-tool-card-sub mb-0">Search official U.S. FDA drug labels &bull; Attending Physicians Only</p>
+          </div>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+          <span class="badge bg-light text-muted border px-3 py-2 rounded-pill small">openFDA SPL API</span>
+          <i class="bi bi-chevron-down text-muted fda-chevron fs-5"
+             style="transition: transform .25s ease; {% if result and (result.tier or result.pred) == 'high' %}transform: rotate(180deg);{% endif %}"></i>
+        </div>
+      </div>
+
+      <div class="collapse {% if result and (result.tier or result.pred) == 'high' %}show{% endif %}" id="fdaPanelBody">
+        <div class="pt-4 mt-3" style="border-top: 1px dashed var(--dc-line);">
+
+          {# ── Disclaimer (always visible inside panel) ── #}
+          <div class="dc-advisory mb-4" style="margin-top: 0;">
+            <i class="bi bi-shield-exclamation" style="color: var(--dc-mid); font-size: 1.5rem;"></i>
+            <div>
+              <strong>Disclaimer:</strong> Reference information from FDA drug labels (openFDA).
+              Not clinical advice and not a substitute for the full official label, a pharmacist or
+              hospital protocols. University project, not a medical device.
+            </div>
+          </div>
+
+          {# ── Search box ── #}
+          <div class="mb-4">
+            <label class="form-label" for="fdaSearchInput">Search Drug Name</label>
+            <div class="input-group">
+              <input type="text" class="form-control"
+                     id="fdaSearchInput"
+                     placeholder="e.g. metformin, glipizide, insulin, pioglitazone..."
+                     maxlength="60"
+                     autocomplete="off"
+                     aria-label="Drug name for FDA label lookup">
+              <button class="dc-btn-go py-2 px-4" type="button" id="fdaSearchBtn" aria-label="Look up drug label" style="border-radius: 0 12px 12px 0;">
+                <i class="bi bi-search"></i>Look up
+              </button>
+            </div>
+            <div class="form-text mt-1">Letters, digits, spaces and hyphens only. Maximum 60 characters.</div>
+          </div>
+
+          {# ── Quick-pick chips (dataset drugs) ── #}
+          <div class="mb-4">
+            <div class="dc-label mb-2">Quick Picks (Diabetes Drugs in Dataset):</div>
+            <div class="d-flex flex-wrap gap-2" id="fdaChips">
+              {% set chip_drugs = [
+                "metformin","repaglinide","nateglinide","chlorpropamide","glimepiride",
+                "acetohexamide","glipizide","glyburide","tolbutamide","pioglitazone",
+                "rosiglitazone","acarbose","miglitol","troglitazone","tolazamide",
+                "insulin","glyburide-metformin","glipizide-metformin",
+                "metformin-rosiglitazone","metformin-pioglitazone"
+              ] %}
+              {% for drug in chip_drugs %}
+              <button type="button"
+                      class="dc-tool-sbtn ok fda-chip py-1 px-3"
+                      data-drug="{{ drug }}"
+                      style="font-size: .8rem;"
+                      aria-label="Look up {{ drug }}">
+                {{ drug }}
+              </button>
+              {% endfor %}
+            </div>
+          </div>
+
+          {# ── Results area ── #}
+          <div id="fdaResults" role="region" aria-live="polite" aria-label="FDA label results">
+
+            {# Idle state #}
+            <div id="fdaIdle" class="text-center py-4 text-muted small">
+              <i class="bi bi-journal-medical fs-2 d-block mb-2 opacity-50" style="color: var(--c);"></i>
+              Enter a drug name or click a quick-pick chip to view its FDA label summary.
+            </div>
+
+            {# Loading spinner #}
+            <div id="fdaLoading" class="text-center py-4 d-none">
+              <div class="spinner-border spinner-border-sm text-primary me-2" role="status">
+                <span class="visually-hidden">Loading…</span>
+              </div>
+              <span class="small text-muted fw-semibold">Querying openFDA database…</span>
+            </div>
+
+            {# Error message #}
+            <div id="fdaError" class="dc-alert-err d-none" role="alert"></div>
+
+            {# Data panel #}
+            <div id="fdaData" class="d-none">
+
+              {# Drug identity header #}
+              <div class="mb-3 pb-3 border-bottom d-flex flex-wrap align-items-center justify-content-between gap-2">
+                <div>
+                  <div class="fw-bold fs-5" id="fdaDrugTitle" style="color: var(--dc-ink);"></div>
+                  <div class="small text-muted fw-semibold" id="fdaDrugGeneric"></div>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                  <span class="badge bg-light text-muted border px-3 py-2 rounded-pill small" id="fdaLabelDate"></span>
+                  <span class="badge bg-light border px-3 py-2 rounded-pill small" id="fdaSourceBadge"></span>
+                </div>
+              </div>
+
+              {# Sections #}
+              <div id="fdaSections"></div>
+
+              {# Source attribution — always shown #}
+              <div class="small text-muted mt-3 pt-2 border-top d-flex align-items-center gap-1">
+                <i class="bi bi-info-circle text-primary"></i>
+                <span>Source: U.S. FDA drug label data via <a href="https://open.fda.gov" target="_blank" rel="noopener noreferrer" class="fw-semibold text-primary">openFDA</a>.</span>
+              </div>
+            </div>
+
+          </div>{# /fdaResults #}
+        </div>{# /collapse body #}
+      </div>{# /collapse #}
+    </div>{# /fdaReferenceCard #}
+    {% endif %}
+
+    <!-- INPUT FORM CARD -->
+    <div class="dc-tool-card">
+      <div class="dc-tool-card-head">
+        <div>
+          <h2 class="dc-tool-card-title">Patient Clinical &amp; Hospital Stay Parameters</h2>
+          <p class="dc-tool-card-sub">Provide inpatient trajectory details to evaluate anticipated medication complexity.</p>
+        </div>
+      </div>
+
+      <div class="dc-tool-sample justify-content-end mb-4">
+        <span>Try sample:</span>
+        <button type="button" class="dc-tool-sbtn ok" data-example='{{ examples.low|tojson|forceescape }}'>
+          Low Load Profile
+        </button>
+        <button type="button" class="dc-tool-sbtn danger" data-example='{{ examples.high|tojson|forceescape }}'>
+          High Polypharmacy Profile
+        </button>
+      </div>
+
+      <form id="medicationForm" method="post" action="{{ url_for('clinical.medication_single') }}">
+
+        <!-- Section 1: Stay & Procedures -->
+        <h6 class="dc-tool-sec">1. Hospital Stay &amp; Procedures</h6>
+        <div class="row g-3 mb-4">
+          <div class="col-md-6 col-lg-3">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <label class="form-label mb-0" for="time_in_hospital">Length of Stay</label>
+              <span class="dc-val" id="time_in_hospital_v">{{ d.time_in_hospital }} days</span>
+            </div>
+            <input type="range" class="form-range" id="time_in_hospital" name="time_in_hospital" min="{{ limits.time_in_hospital[0] }}" max="{{ limits.time_in_hospital[1] }}" value="{{ d.time_in_hospital }}">
+          </div>
+
+          <div class="col-md-6 col-lg-3">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <label class="form-label mb-0" for="num_lab_procedures">Lab Tests</label>
+              <span class="dc-val" id="num_lab_procedures_v">{{ d.num_lab_procedures }}</span>
+            </div>
+            <input type="range" class="form-range" id="num_lab_procedures" name="num_lab_procedures" min="{{ limits.num_lab_procedures[0] }}" max="{{ limits.num_lab_procedures[1] }}" value="{{ d.num_lab_procedures }}">
+          </div>
+
+          <div class="col-md-6 col-lg-3">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <label class="form-label mb-0" for="num_procedures">Procedures</label>
+              <span class="dc-val" id="num_procedures_v">{{ d.num_procedures }}</span>
+            </div>
+            <input type="range" class="form-range" id="num_procedures" name="num_procedures" min="{{ limits.num_procedures[0] }}" max="{{ limits.num_procedures[1] }}" value="{{ d.num_procedures }}">
+          </div>
+
+          <div class="col-md-6 col-lg-3">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <label class="form-label mb-0" for="number_diagnoses">Total Diagnoses</label>
+              <span class="dc-val" id="number_diagnoses_v">{{ d.number_diagnoses }}</span>
+            </div>
+            <input type="range" class="form-range" id="number_diagnoses" name="number_diagnoses" min="{{ limits.number_diagnoses[0] }}" max="{{ limits.number_diagnoses[1] }}" value="{{ d.number_diagnoses }}">
+          </div>
+        </div>
+
+        <!-- Section 2: Patient History -->
+        <h6 class="dc-tool-sec">2. Hospital Utilization (Prior 12 Months)</h6>
+        <div class="row g-3 mb-4">
+          <div class="col-md-4">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <label class="form-label mb-0" for="number_inpatient">Inpatient Stays</label>
+              <span class="dc-val" id="number_inpatient_v">{{ d.number_inpatient }}</span>
+            </div>
+            <input type="range" class="form-range" id="number_inpatient" name="number_inpatient" min="{{ limits.number_inpatient[0] }}" max="{{ limits.number_inpatient[1] }}" value="{{ d.number_inpatient }}">
+          </div>
+
+          <div class="col-md-4">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <label class="form-label mb-0" for="number_emergency">Emergency Visits</label>
+              <span class="dc-val" id="number_emergency_v">{{ d.number_emergency }}</span>
+            </div>
+            <input type="range" class="form-range" id="number_emergency" name="number_emergency" min="{{ limits.number_emergency[0] }}" max="{{ limits.number_emergency[1] }}" value="{{ d.number_emergency }}">
+          </div>
+
+          <div class="col-md-4">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <label class="form-label mb-0" for="number_outpatient">Outpatient Visits</label>
+              <span class="dc-val" id="number_outpatient_v">{{ d.number_outpatient }}</span>
+            </div>
+            <input type="range" class="form-range" id="number_outpatient" name="number_outpatient" min="{{ limits.number_outpatient[0] }}" max="{{ limits.number_outpatient[1] }}" value="{{ d.number_outpatient }}">
+          </div>
+        </div>
+
+        <!-- Section 3: Clinical & Administrative Details -->
+        <h6 class="dc-tool-sec">3. Diagnoses, Specialty &amp; Treatment Indicators</h6>
+        <div class="row g-3 mb-4">
+          <div class="col-md-6 col-lg-3">
+            <label class="form-label" for="gender">Gender</label>
+            <select class="form-select" id="gender" name="gender">
+              {% for g in genders %}
+              <option value="{{ g }}" {% if d.gender == g %}selected{% endif %}>{{ g }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="col-md-6 col-lg-3">
+            <label class="form-label" for="admission_type_id">Admission Type</label>
+            <select class="form-select" id="admission_type_id" name="admission_type_id">
+              {% for val, txt in admission_types %}
+              <option value="{{ val }}" {% if d.admission_type_id|string == val|string %}selected{% endif %}>{{ txt }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="col-md-6 col-lg-3">
+            <label class="form-label" for="admission_source_id">Admission Source</label>
+            <select class="form-select" id="admission_source_id" name="admission_source_id">
+              {% for val, txt in admission_sources %}
+              <option value="{{ val }}" {% if d.admission_source_id|string == val|string %}selected{% endif %}>{{ txt }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="col-md-6 col-lg-3">
+            <label class="form-label" for="medical_specialty">Medical Specialty</label>
+            <select class="form-select" id="medical_specialty" name="medical_specialty">
+              {% for s in specialties %}
+              <option value="{{ s }}" {% if d.medical_specialty == s %}selected{% endif %}>{{ s }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="col-md-4">
+            <label class="form-label" for="diag_1">Primary ICD-9 Code</label>
+            <input type="text" class="form-control" id="diag_1" name="diag_1" value="{{ d.diag_1 }}" placeholder="e.g. 428">
+          </div>
+
+          <div class="col-md-4">
+            <label class="form-label" for="diag_2">Secondary ICD-9 Code 2</label>
+            <input type="text" class="form-control" id="diag_2" name="diag_2" value="{{ d.diag_2 }}" placeholder="e.g. 250">
+          </div>
+
+          <div class="col-md-4">
+            <label class="form-label" for="diag_3">Secondary ICD-9 Code 3</label>
+            <input type="text" class="form-control" id="diag_3" name="diag_3" value="{{ d.diag_3 }}" placeholder="e.g. NA">
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label" for="change">Medication Changed During Stay</label>
+            <select class="form-select" id="change" name="change">
+              {% for val in yesno %}
+              <option value="{{ val }}" {% if d.change == val %}selected{% endif %}>{{ val }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label" for="diabetesMed">Diabetes Medication Prescribed</label>
+            <select class="form-select" id="diabetesMed" name="diabetesMed">
+              {% for val in yesno %}
+              <option value="{{ val }}" {% if d.diabetesMed == val %}selected{% endif %}>{{ val }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <div class="dc-tool-actions">
+          <button type="submit" class="dc-btn-go" id="submitBtn">
+            <i class="bi bi-capsule"></i>Assess Medication Load
+          </button>
+          <a href="{{ url_for('clinical.medication_single') }}" class="dc-btn-reset">
+            <i class="bi bi-arrow-counterclockwise"></i>Reset Form
+          </a>
+        </div>
+      </form>
+    </div>
+
+  </div>
+</section>
+
+</div>
+
+<script>
+document.querySelectorAll('input[type=range]').forEach(function(slider) {
+  var out = document.getElementById(slider.id + '_v');
+  var sync = function() {
+    if (out) {
+      if (slider.id === 'time_in_hospital') {
+        out.textContent = slider.value + ' days';
+      } else {
+        out.textContent = slider.value;
+      }
+    }
+  };
+  slider.addEventListener('input', sync);
+  sync();
+});
+
+document.querySelectorAll('[data-example]').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    var ex = JSON.parse(btn.getAttribute('data-example'));
+    Object.keys(ex).forEach(function(k) {
+      var el = document.getElementById(k);
+      if (el) {
+        el.value = String(ex[k]);
+        el.dispatchEvent(new Event('input'));
+      }
+    });
+  });
+});
+
+/* ── Phase 6: FDA Drug Label Reference Panel ───────────────────────────── */
+(function () {
+  'use strict';
+
+  /* Chevron rotation on collapse toggle */
+  var toggleBtn = document.getElementById('fdaPanelToggle');
+  var chevron   = toggleBtn && toggleBtn.querySelector('.fda-chevron');
+  var panelBody = document.getElementById('fdaPanelBody');
+  if (panelBody && chevron) {
+    panelBody.addEventListener('show.bs.collapse',  function () { chevron.style.transform = 'rotate(180deg)'; });
+    panelBody.addEventListener('hide.bs.collapse',  function () { chevron.style.transform = 'rotate(0deg)'; });
+  }
+
+  /* Escape HTML to safely render FDA label text */
+  function esc(str) {
+    if (!str) return '';
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+              .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
+
+  /* Section definitions matching DiaCare theme */
+  var SECTIONS = [
+    { key: 'boxed_warning',        label: 'Boxed Warning',      icon: 'bi-exclamation-octagon-fill', color: '#dc3545' },
+    { key: 'indications_and_usage',label: 'Indications & Usage', icon: 'bi-check-circle-fill',        color: '#175cdd' },
+    { key: 'drug_interactions',    label: 'Drug Interactions',   icon: 'bi-arrow-left-right',          color: '#64748b' },
+    { key: 'warnings',             label: 'Warnings',            icon: 'bi-exclamation-triangle-fill', color: '#175cdd' },
+  ];
+
+  function renderSections(data) {
+    var html = '';
+    SECTIONS.forEach(function (s) {
+      var sec = data[s.key] || {};
+      var text  = sec.text  || 'Not provided in this label.';
+      var full  = sec.full  || '';
+      var trunc = sec.truncated || false;
+      var id    = 'fda_more_' + s.key;
+
+      html += '<div class="dc-note mb-3" style="border-left: 4px solid ' + s.color + ';">';
+      html += '<div class="d-flex align-items-center gap-2 mb-2">';
+      html += '<i class="' + s.icon + ' flex-shrink-0" style="color:' + s.color + '; font-size:1.05rem;"></i>';
+      html += '<strong style="color:var(--dc-ink); font-size:0.9rem;">' + esc(s.label) + '</strong>';
+      html += '</div>';
+      html += '<div class="small text-secondary lh-base">';
+      html += '<span id="' + id + '_short">' + esc(text) + '</span>';
+      if (trunc && full) {
+        html += '<span id="' + id + '_full" class="d-none">' + esc(full) + '</span>';
+        html += ' <button class="btn btn-link btn-sm p-0 ms-1 fda-showmore" '
+              + 'data-id="' + id + '" style="font-size:.82rem; text-decoration:none; font-weight:700; color:#175cdd;" type="button">Show more</button>';
+      }
+      html += '</div></div>';
+    });
+    return html;
+  }
+
+  /* "Show more" toggle (delegated) */
+  document.addEventListener('click', function (e) {
+    if (!e.target.classList.contains('fda-showmore')) return;
+    var id    = e.target.getAttribute('data-id');
+    var short = document.getElementById(id + '_short');
+    var full  = document.getElementById(id + '_full');
+    if (!short || !full) return;
+    var showing = !full.classList.contains('d-none');
+    full.classList.toggle('d-none', showing);
+    short.classList.toggle('d-none', !showing);
+    e.target.textContent = showing ? 'Show more' : 'Show less';
+  });
+
+  /* Display helpers */
+  function showIdle()    { toggle('fdaIdle','fdaLoading','fdaError','fdaData'); }
+  function showLoading() { toggle('fdaLoading','fdaIdle','fdaError','fdaData'); }
+  function showError(msg){ toggle('fdaError','fdaIdle','fdaLoading','fdaData');
+                           var el = document.getElementById('fdaError');
+                           if (el) el.innerHTML = '<i class="bi bi-exclamation-triangle-fill"></i><div>' + esc(msg) + '</div>'; }
+  function showData()    { toggle('fdaData','fdaIdle','fdaLoading','fdaError'); }
+
+  function toggle(show) {
+    var ids = ['fdaIdle','fdaLoading','fdaError','fdaData'];
+    ids.forEach(function(id){
+      var el = document.getElementById(id);
+      if (!el) return;
+      el.classList.toggle('d-none', id !== show);
+    });
+  }
+
+  function lookup(name) {
+    if (!name || !name.trim()) { showIdle(); return; }
+    showLoading();
+
+    fetch('/api/drug-label?name=' + encodeURIComponent(name.trim()), {
+      credentials: 'same-origin'
+    })
+    .then(function (resp) {
+      return resp.json().then(function (data) {
+        return { status: resp.status, data: data };
+      });
+    })
+    .then(function (r) {
+      var data = r.data;
+      if (!data.ok) {
+        showError(data.error || 'An unexpected error occurred.');
+        return;
+      }
+      /* Drug title */
+      var brands   = (data.brand_names || []).join(', ') || '—';
+      var generics = (data.generic_names || []).join(', ') || '—';
+      var title    = document.getElementById('fdaDrugTitle');
+      var gen      = document.getElementById('fdaDrugGeneric');
+      var dateEl   = document.getElementById('fdaLabelDate');
+      var srcEl    = document.getElementById('fdaSourceBadge');
+      if (title)  title.textContent  = brands;
+      if (gen)    gen.textContent    = 'Generic: ' + generics;
+      if (dateEl) dateEl.textContent = data.label_date ? 'Label date: ' + data.label_date : '';
+
+      var srcText = 'Live FDA';
+      if (data.source === 'cache')    srcText = 'Cached';
+      if (data.source === 'snapshot') srcText = 'Saved copy (' + (data.snapshot_date || '') + ')';
+      if (srcEl) {
+        srcEl.textContent = srcText;
+        srcEl.style.color = data.source === 'snapshot' ? '#175cdd' : '#0ea5e9';
+      }
+
+      /* Sections */
+      var secContainer = document.getElementById('fdaSections');
+      if (secContainer) secContainer.innerHTML = renderSections(data);
+
+      showData();
+    })
+    .catch(function (err) {
+      showError('Could not reach the server. Please check your connection and try again.');
+    });
+  }
+
+  /* Search button */
+  var searchBtn = document.getElementById('fdaSearchBtn');
+  var searchInput = document.getElementById('fdaSearchInput');
+  if (searchBtn && searchInput) {
+    searchBtn.addEventListener('click', function () {
+      lookup(searchInput.value);
+    });
+    searchInput.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') { e.preventDefault(); lookup(searchInput.value); }
+    });
+  }
+
+  /* Chip clicks */
+  var chips = document.getElementById('fdaChips');
+  if (chips) {
+    chips.addEventListener('click', function (e) {
+      var chip = e.target.closest('.fda-chip');
+      if (!chip) return;
+      var drug = chip.getAttribute('data-drug');
+      if (searchInput) searchInput.value = drug;
+      lookup(drug);
+      /* Expand panel if collapsed */
+      if (panelBody && !panelBody.classList.contains('show')) {
+        var bsCollapse = bootstrap && bootstrap.Collapse ? new bootstrap.Collapse(panelBody, {toggle: false}) : null;
+        if (bsCollapse) bsCollapse.show();
+      }
+    });
+  }
+})();
+</script>
+
+{% endblock %}

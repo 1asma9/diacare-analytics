@@ -1,0 +1,85 @@
+{
+  "0": {
+    "size": 43373,
+    "pct": 62.0,
+    "readmission_pct": 37.3,
+    "readmission_lt30_pct": 7.7,
+    "top_features": {
+      "num_medications": {
+        "z_score": -0.44,
+        "cluster_mean": 12.0,
+        "global_mean": 15.67
+      },
+      "time_in_hospital": {
+        "z_score": -0.42,
+        "cluster_mean": 3.05,
+        "global_mean": 4.27
+      },
+      "change_bin": {
+        "z_score": -0.39,
+        "cluster_mean": 0.25,
+        "global_mean": 0.45
+      },
+      "n_meds_changed": {
+        "z_score": -0.38,
+        "cluster_mean": 0.08,
+        "global_mean": 0.26
+      },
+      "n_meds_used": {
+        "z_score": -0.33,
+        "cluster_mean": 0.88,
+        "global_mean": 1.19
+      }
+    },
+    "overrepresented_cats": []
+  },
+  "1": {
+    "size": 26606,
+    "pct": 38.0,
+    "readmission_pct": 46.4,
+    "readmission_lt30_pct": 11.1,
+    "top_features": {
+      "num_medications": {
+        "z_score": 0.72,
+        "cluster_mean": 21.64,
+        "global_mean": 15.67
+      },
+      "time_in_hospital": {
+        "z_score": 0.68,
+        "cluster_mean": 6.26,
+        "global_mean": 4.27
+      },
+      "change_bin": {
+        "z_score": 0.64,
+        "cluster_mean": 0.77,
+        "global_mean": 0.45
+      },
+      "n_meds_changed": {
+        "z_score": 0.61,
+        "cluster_mean": 0.55,
+        "global_mean": 0.26
+      },
+      "n_meds_used": {
+        "z_score": 0.54,
+        "cluster_mean": 1.7,
+        "global_mean": 1.19
+      }
+    },
+    "overrepresented_cats": [
+      {
+        "feature": "discharge",
+        "modality": "Facility",
+        "share_cluster_pct": 27.3,
+        "share_global_pct": 19.5,
+        "lift": 1.4
+      },
+      {
+        "feature": "A1Cresult",
+        "modality": ">8",
+        "share_cluster_pct": 12.7,
+        "share_global_pct": 8.9,
+        "lift": 1.42
+      }
+    ]
+  }
+}

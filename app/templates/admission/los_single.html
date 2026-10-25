@@ -1,0 +1,279 @@
+{% extends "base.html" %}
+
+{% block title %}Length of Stay Prediction — DiaCare Analytics{% endblock %}
+
+{% block extra_head %}
+<link href="{{ url_for('static', filename='css/dc-tools.css') }}" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="dc-tool" style="--c:#1558d6;">
+
+<!-- Hero Banner with Clinical Image -->
+<section class="dc-tool-hero">
+  <div class="container" data-aos="fade-up">
+    <div class="dc-tool-hero-card">
+      <div class="dc-tool-hero-text">
+        <div class="dc-tool-pill">
+          <i class="bi bi-clock-history"></i> Admission &amp; Planning &bull; Doctors &amp; Reception
+        </div>
+        <h1 class="dc-tool-title">Length of Stay Prediction (more than 3 Days)</h1>
+        <p class="dc-tool-desc">
+          Predicts whether an inpatient stay is likely to exceed 3 days. Available at initial admission (3 inputs) or mid-stay (5 inputs) to optimize bed occupancy and discharge planning.
+        </p>
+        <div class="dc-tool-chips">
+          <span class="dc-tool-chip"><i class="bi bi-door-open-fill"></i>Admission Version (3 Inputs)</span>
+          <span class="dc-tool-chip"><i class="bi bi-hospital"></i>After-Stay Version (5 Inputs)</span>
+          <span class="dc-tool-chip"><i class="bi bi-calendar-check"></i>Threshold: &gt; 3 Days</span>
+        </div>
+      </div>
+      <div class="dc-tool-hero-media">
+        <img src="{{ url_for('static', filename='img/health/cardiology-1.webp') }}" alt="Hospital Inpatient Bed Planning">
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Content Section -->
+<section class="dc-tool-body">
+  <div class="container" data-aos="fade-up">
+
+    {% if errors %}
+    <div class="dc-alert-err" role="alert">
+      <i class="bi bi-exclamation-triangle-fill"></i>
+      <div>
+        <h6>Please review the following inputs:</h6>
+        <ul>
+          {% for e in errors %}<li>{{ e }}</li>{% endfor %}
+        </ul>
+      </div>
+    </div>
+    {% endif %}
+
+    {% if result %}
+    <!-- RESULT CARD -->
+    <div class="dc-res">
+      <div class="dc-res-head">
+        <div>
+          <span class="dc-res-badge"><i class="bi bi-check2-circle"></i>Assessment Complete</span>
+          <h2 class="dc-res-title">Estimated Hospital Stay Duration</h2>
+        </div>
+        <div class="dc-res-btns">
+          <button type="button" class="dc-btn-ghost" onclick="window.print()">
+            <i class="bi bi-printer"></i>Print Report
+          </button>
+          <a href="{{ url_for('admission.los_single', version=version) }}" class="dc-btn-solid">
+            <i class="bi bi-plus-circle"></i>New Patient
+          </a>
+        </div>
+      </div>
+
+      <div class="dc-res-body">
+        <div class="dc-res-grid">
+          <!-- Predicted Result Column -->
+          <div class="dc-res-left">
+            <div class="dc-label">Predicted Stay Category</div>
+            <div class="dc-bigval" style="color: {% if result.is_long %}#dc3545{% else %}#0284c7{% endif %};">
+              {{ result.label }}
+            </div>
+            <div>
+              <span class="dc-bigbadge" style="{% if result.is_long %}background-color: #dc3545;{% else %}background-color: #0ea5e9;{% endif %}">
+                Long Stay Probability: {{ result.percentage }}%
+              </span>
+            </div>
+
+            <div class="dc-note">
+              <strong>Bed Allocation Recommendation:</strong>
+              <p>{{ result.advice }}</p>
+            </div>
+          </div>
+
+          <!-- Progress and Context -->
+          <div>
+            <div class="dc-res-h">
+              <span><i class="bi bi-bar-chart-fill"></i>Probability Distribution</span>
+              <span class="dc-cut">Cutoff: 50%</span>
+            </div>
+
+            <div class="dc-bar-row">
+              <div class="dc-bar-top">
+                <span>Prolonged Stay (&gt; 3 days)</span>
+                <span class="dc-pct">{{ result.percentage }}%</span>
+              </div>
+              <div class="progress" style="height: 10px; border-radius: 6px;">
+                <div class="progress-bar"
+                     role="progressbar"
+                     style="width: {{ result.percentage }}%; background-color: {% if result.is_long %}#dc3545{% else %}#0ea5e9{% endif %};"
+                     aria-valuenow="{{ result.percentage }}" aria-valuemin="0" aria-valuemax="100">
+                </div>
+              </div>
+            </div>
+
+            <div class="dc-bar-row">
+              <div class="dc-bar-top">
+                <span>Routine Short Stay (&le; 3 days)</span>
+                <span class="dc-pct">{{ (100 - result.percentage)|round(1) }}%</span>
+              </div>
+              <div class="progress" style="height: 10px; border-radius: 6px;">
+                <div class="progress-bar"
+                     role="progressbar"
+                     style="width: {{ [100 - result.percentage, 100]|min }}%; background-color: #0ea5e9;"
+                     aria-valuenow="{{ 100 - result.percentage }}" aria-valuemin="0" aria-valuemax="100">
+                </div>
+              </div>
+            </div>
+
+            <div class="dc-ctx">
+              <i class="bi bi-info-circle-fill"></i>
+              Evaluated using <strong>{{ version|replace('_', ' ')|capitalize }}</strong> feature set. Median diabetic inpatient stay in benchmark cohort is 4.3 days.
+            </div>
+          </div>
+        </div>
+
+        <!-- Short Interpretation of Results (Below Results) -->
+        <div class="dc-interp">
+          <div class="dc-interp-t"><i class="bi bi-info-circle-fill"></i>Clinical Interpretation:</div>
+          <p>
+            {% if result.is_long %}
+              Patient is evaluated with high probability of a <strong>Prolonged Hospital Stay (&gt; 3 days)</strong> at <strong>{{ result.percentage }}%</strong> (decision threshold: 50%). Proactive inpatient bed management, multidisciplinary coordination, and early estimated date of discharge (EDD) planning are recommended to prevent discharge bottlenecks.
+            {% else %}
+              Patient is evaluated for a <strong>Routine Short Stay (&le; 3 days)</strong> with prolonged stay probability of <strong>{{ result.percentage }}%</strong> (below threshold). Bed planning should align with standard short-stay inpatient diabetes protocols and early discharge counseling.
+            {% endif %}
+          </p>
+        </div>
+
+        <!-- Advisory Banner -->
+        <div class="dc-advisory">
+          <i class="bi bi-info-circle-fill"></i>
+          <div>
+            <strong>Decision Support Advisory:</strong> DiaCare models assist clinical prioritization and transitional care allocation. They do not constitute diagnostic or prescriptive orders. Always consider the full clinical context.
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- INPUT FORM CARD -->
+    <div class="dc-tool-card">
+
+      <!-- Version Tabs -->
+      <div class="dc-tool-card-head">
+        <div>
+          <h2 class="dc-tool-card-title">Patient Clinical Variables</h2>
+          <p class="dc-tool-card-sub">Select model configuration based on available data point in the patient journey.</p>
+        </div>
+        <div class="dc-tool-tabs" role="group">
+          <a href="{{ url_for('admission.los_single', version='admission') }}" class="{% if version == 'admission' %}active{% endif %}">
+            <i class="bi bi-door-open"></i>Admission Version (3 Inputs)
+          </a>
+          <a href="{{ url_for('admission.los_single', version='after_stay') }}" class="{% if version == 'after_stay' %}active{% endif %}">
+            <i class="bi bi-hospital"></i>After-Stay Version (5 Inputs)
+          </a>
+        </div>
+      </div>
+
+      <div class="dc-tool-sample justify-content-end mb-4">
+        <span>Try sample:</span>
+        <button type="button" class="dc-tool-sbtn ok" data-example='{{ examples.short[version]|tojson|forceescape }}'>
+          Short Stay Candidate
+        </button>
+        <button type="button" class="dc-tool-sbtn danger" data-example='{{ examples.long[version]|tojson|forceescape }}'>
+          Long Stay Candidate
+        </button>
+      </div>
+
+      <form id="losForm" method="post" action="{{ url_for('admission.los_single') }}">
+        <input type="hidden" name="version" value="{{ version }}">
+
+        <div class="row g-4 mb-4">
+          <!-- 1. Number of Diagnoses -->
+          <div class="col-md-6 col-lg-4">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <label class="form-label mb-0" for="number_diagnoses">Total Diagnoses</label>
+              <span class="dc-val" id="number_diagnoses_v">{{ d.number_diagnoses }}</span>
+            </div>
+            <input type="range" class="form-range" id="number_diagnoses" name="number_diagnoses" min="{{ limits.number_diagnoses[0] }}" max="{{ limits.number_diagnoses[1] }}" value="{{ d.number_diagnoses }}">
+          </div>
+
+          <!-- 2. Number of Procedures -->
+          <div class="col-md-6 col-lg-4">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <label class="form-label mb-0" for="num_procedures">Procedures</label>
+              <span class="dc-val" id="num_procedures_v">{{ d.num_procedures }}</span>
+            </div>
+            <input type="range" class="form-range" id="num_procedures" name="num_procedures" min="{{ limits.num_procedures[0] }}" max="{{ limits.num_procedures[1] }}" value="{{ d.num_procedures }}">
+          </div>
+
+          <!-- 3. Medication Change -->
+          <div class="col-md-6 col-lg-4">
+            <label class="form-label" for="change">Medication Change During Stay</label>
+            <select class="form-select" id="change" name="change">
+              <option value="No" {% if d.change == 'No' %}selected{% endif %}>No Change</option>
+              <option value="Yes" {% if d.change in ('Yes', 'Ch') %}selected{% endif %}>Dosage Changed / Added</option>
+            </select>
+          </div>
+
+          {% if version == 'after_stay' %}
+          <!-- 4. Total Medications (After Stay only) -->
+          <div class="col-md-6 col-lg-6">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <label class="form-label mb-0" for="num_medications">Total Medications Administered</label>
+              <span class="dc-val" id="num_medications_v">{{ d.num_medications }}</span>
+            </div>
+            <input type="range" class="form-range" id="num_medications" name="num_medications" min="{{ limits.num_medications[0] }}" max="{{ limits.num_medications[1] }}" value="{{ d.num_medications }}">
+          </div>
+
+          <!-- 5. Lab Procedures (After Stay only) -->
+          <div class="col-md-6 col-lg-6">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <label class="form-label mb-0" for="num_lab_procedures">Lab Tests Performed</label>
+              <span class="dc-val" id="num_lab_procedures_v">{{ d.num_lab_procedures }}</span>
+            </div>
+            <input type="range" class="form-range" id="num_lab_procedures" name="num_lab_procedures" min="{{ limits.num_lab_procedures[0] }}" max="{{ limits.num_lab_procedures[1] }}" value="{{ d.num_lab_procedures }}">
+          </div>
+          {% endif %}
+        </div>
+
+        <div class="dc-tool-actions">
+          <button type="submit" class="dc-btn-go" id="submitBtn">
+            <i class="bi bi-clock-history"></i>Predict Length of Stay
+          </button>
+          <a href="{{ url_for('admission.los_single', version=version) }}" class="dc-btn-reset">
+            <i class="bi bi-arrow-counterclockwise"></i>Reset Form
+          </a>
+        </div>
+      </form>
+    </div>
+
+  </div>
+</section>
+
+</div>
+
+<script>
+document.querySelectorAll('input[type=range]').forEach(function(slider) {
+  var out = document.getElementById(slider.id + '_v');
+  var sync = function() {
+    if (out) {
+      out.textContent = slider.value;
+    }
+  };
+  slider.addEventListener('input', sync);
+  sync();
+});
+
+document.querySelectorAll('[data-example]').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    var ex = JSON.parse(btn.getAttribute('data-example'));
+    Object.keys(ex).forEach(function(k) {
+      var el = document.getElementById(k);
+      if (el) {
+        el.value = ex[k];
+        el.dispatchEvent(new Event('input'));
+      }
+    });
+  });
+});
+</script>
+
+{% endblock %}

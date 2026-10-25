@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+
+{% block title %}Patient Profiles Overview — DiaCare Analytics{% endblock %}
+
+{% block extra_head %}
+<link href="{{ url_for('static', filename='css/dc-tools.css') }}" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="dc-tool" style="--c:#1558d6;">
+
+<!-- Hero Banner with Clinical Image -->
+<section class="dc-tool-hero">
+  <div class="container" data-aos="fade-up">
+    <div class="dc-tool-hero-card">
+      <div class="dc-tool-hero-text">
+        <div class="dc-tool-pill">
+          <i class="bi bi-diagram-3-fill"></i> Unsupervised Phenotyping &bull; Doctors Only
+        </div>
+        <h1 class="dc-tool-title">The Two Clinical Patient Profiles</h1>
+        <p class="dc-tool-desc">
+          K-Means clustering ($k=2$) combined with 18-dimensional Principal Component Analysis (PCA) revealing two distinct natural clinical archetypes among hospitalized diabetic patients.
+        </p>
+        <div class="dc-tool-chips">
+          <span class="dc-tool-chip"><i class="bi bi-pie-chart-fill"></i>Cluster 0: 62.0% (Routine)</span>
+          <span class="dc-tool-chip"><i class="bi bi-pie-chart-fill" style="color: #e0483f;"></i>Cluster 1: 38.0% (Complex)</span>
+          <span class="dc-tool-chip"><i class="bi bi-activity"></i>PCA Dimension: 18D (90% Var)</span>
+        </div>
+      </div>
+      <div class="dc-tool-hero-media">
+        <img src="{{ url_for('static', filename='img/health/neurology-2.webp') }}" alt="Unsupervised Inpatient Phenotyping">
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Profiles Overview Section -->
+<section class="dc-tool-body">
+  <div class="container" data-aos="fade-up">
+
+    <div class="row g-4 mb-4">
+      <!-- Profile 0 Card -->
+      <div class="col-lg-6">
+        <div class="dc-tool-card h-100 mb-0" style="--c:#175cdd;">
+          <div class="d-flex align-items-center justify-content-between mb-3">
+            <span class="dc-val" style="padding: 6px 16px; font-size: .9rem;">Profile 0</span>
+            <span class="fw-bold fs-5" style="color: #175cdd;">62.0% of cohort</span>
+          </div>
+          <h3 class="dc-tool-card-title mb-2" style="font-size: 1.4rem;">Routine / Moderate-Acuity Stay</h3>
+          <p class="mb-4" style="color: var(--dc-muted); line-height: 1.7;">
+            Characterized by short, uncomplicated stays, manageable medication regimens, infrequent pharmacotherapeutic changes, and high home discharge rates.
+          </p>
+
+          <h6 class="dc-tool-sec">Key Phenotype Markers</h6>
+          <ul class="list-unstyled mb-4">
+            <li class="d-flex align-items-center gap-2 mb-2">
+              <i class="bi bi-check-circle-fill" style="color: #0ea5e9;"></i>
+              <span><strong>Length of Stay:</strong> Mean 3.1 days (vs. 4.3 days global avg)</span>
+            </li>
+            <li class="d-flex align-items-center gap-2 mb-2">
+              <i class="bi bi-check-circle-fill" style="color: #0ea5e9;"></i>
+              <span><strong>Medications Administered:</strong> Mean 12.0 drugs (vs. 15.7 global avg)</span>
+            </li>
+            <li class="d-flex align-items-center gap-2 mb-2">
+              <i class="bi bi-check-circle-fill" style="color: #0ea5e9;"></i>
+              <span><strong>Medication Modifications:</strong> Only 25% of stays had dose changes</span>
+            </li>
+            <li class="d-flex align-items-center gap-2 mb-2">
+              <i class="bi bi-check-circle-fill" style="color: #0ea5e9;"></i>
+              <span><strong>Early Readmission (&lt;30d):</strong> 7.7% (low readmission rate)</span>
+            </li>
+          </ul>
+
+          <div class="dc-note mt-auto">
+            <strong>Clinical Protocol:</strong>
+            <p>Standard discharge pathway with routine follow-up instructions and outpatient pharmacy scheduling.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Profile 1 Card -->
+      <div class="col-lg-6">
+        <div class="dc-tool-card h-100 mb-0" style="--c:#dc3545;">
+          <div class="d-flex align-items-center justify-content-between mb-3">
+            <span class="dc-val" style="padding: 6px 16px; font-size: .9rem;">Profile 1</span>
+            <span class="fw-bold fs-5" style="color: #dc3545;">38.0% of cohort</span>
+          </div>
+          <h3 class="dc-tool-card-title mb-2" style="font-size: 1.4rem;">Complex / High-Acuity Polypharmacy</h3>
+          <p class="mb-4" style="color: var(--dc-muted); line-height: 1.7;">
+            Characterized by extended stays, heavy pharmacotherapy, active drug adjustments, poor glycemic control, and high readmission probability.
+          </p>
+
+          <h6 class="dc-tool-sec">Key Phenotype Markers</h6>
+          <ul class="list-unstyled mb-4">
+            <li class="d-flex align-items-center gap-2 mb-2">
+              <i class="bi bi-exclamation-triangle-fill text-danger"></i>
+              <span><strong>Length of Stay:</strong> Mean 6.3 days (double that of Profile 0)</span>
+            </li>
+            <li class="d-flex align-items-center gap-2 mb-2">
+              <i class="bi bi-exclamation-triangle-fill text-danger"></i>
+              <span><strong>Medications Administered:</strong> Mean 21.6 drugs (heavy polypharmacy)</span>
+            </li>
+            <li class="d-flex align-items-center gap-2 mb-2">
+              <i class="bi bi-exclamation-triangle-fill text-danger"></i>
+              <span><strong>Medication Modifications:</strong> 77% of stays required active titration</span>
+            </li>
+            <li class="d-flex align-items-center gap-2 mb-2">
+              <i class="bi bi-exclamation-triangle-fill text-danger"></i>
+              <span><strong>Discharge to Facilities:</strong> 27.3% (1.4x higher than cohort avg)</span>
+            </li>
+            <li class="d-flex align-items-center gap-2 mb-2">
+              <i class="bi bi-exclamation-triangle-fill text-danger"></i>
+              <span><strong>Early Readmission (&lt;30d):</strong> 11.1% (elevated clinical risk)</span>
+            </li>
+          </ul>
+
+          <div class="dc-note mt-auto">
+            <strong>Clinical Protocol:</strong>
+            <p>Multidisciplinary discharge planning, pharmacist medication reconciliation, and post-discharge telephone contact within 72 hours.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Interactive Patient Assignment Link -->
+    <div class="dc-tool-card text-center">
+      <h3 class="dc-tool-card-title mb-2">Evaluate an Individual Patient's Profile</h3>
+      <p class="dc-tool-card-sub mb-3">Input a patient's stay parameters to project them into PCA space and identify which clinical archetype they match.</p>
+      <div>
+        <a href="{{ url_for('clinical.profiles_patient') }}" class="dc-btn-go">
+          <i class="bi bi-person-check-fill"></i>Where Does This Patient Fit?
+        </a>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+</div>
+{% endblock %}

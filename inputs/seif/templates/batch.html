@@ -1,0 +1,17 @@
+{% extends "base.html" %}{% block title %}Several patients - DiaCare Analytics{% endblock %}
+{% block body %}
+<h1>Score a list of patients</h1>
+<p class="lead">Upload a CSV, get the patients ranked from highest to lowest risk. Useful to decide who to call first when the team can only follow a part of them.</p>
+{% if error %}<div class="err" role="alert">{{error}}</div>{% endif %}
+<div class="card"><form method="post" enctype="multipart/form-data"><label for="file">CSV file (max 5000 patients)</label>
+<input type="file" id="file" name="file" accept=".csv" required style="margin-bottom:14px">
+<div class="btns"><button class="btn" type="submit">Score patients</button><a class="btn ghost" href="/batch/template">Download an example file</a></div></form>
+<p class="muted small" style="margin-top:14px">Columns: {{ columns|join(', ') }}. <code>age_group</code> is 1 to 10 (1 = 0-10 years, 10 = 90-100).</p></div>
+{% if result %}
+<div class="grid g3"><div class="card stat"><b>{{result.summary.n}}</b><span>patients scored</span></div>
+<div class="card stat"><b>{{result.summary.flagged}}</b><span>recommended for follow-up</span></div>
+<div class="card stat"><b>{{result.summary.high}}</b><span>high risk</span></div></div>
+<div class="card"><div class="btns" style="justify-content:space-between;margin-bottom:10px"><h2 style="margin:0">Top of the list</h2><a class="btn" href="/batch/download">Download all (CSV)</a></div>
+<table><tr><th>#</th><th>Patient</th><th class="n">Risk</th><th>Level</th></tr>
+{% for r in result.rows %}<tr><td>{{r.rank}}</td><td>{{r.id}}</td><td class="n">{{(r.risk*100)|round(1)}} %</td><td><span class="badge b-{{r.level}}">{{r.level}}</span></td></tr>{% endfor %}</table></div>
+{% endif %}{% endblock %}

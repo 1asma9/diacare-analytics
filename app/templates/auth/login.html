@@ -1,0 +1,461 @@
+{% extends "base.html" %}
+
+{% block title %}Sign In — DiaCare Analytics{% endblock %}
+
+{% block extra_head %}
+<style>
+  /* ============================================================
+     DiaCare Analytics — Sign In page (styles scopés à cette page)
+     ============================================================ */
+  .dc-login-section {
+    --dc-blue: var(--accent-color, #1a5fd8);
+    --dc-blue-dark: #0b2a6f;
+    --dc-blue-mid: #1558d6;
+    --dc-blue-light: #3b8bff;
+    --dc-ink: #0f1f3d;
+    --dc-muted: #6b7a90;
+    --dc-line: #e3e9f3;
+    position: relative;
+    padding: 48px 0 64px;
+    background:
+      radial-gradient(circle at 12% 18%, rgba(59, 139, 255, 0.14), transparent 40%),
+      radial-gradient(circle at 88% 82%, rgba(21, 88, 214, 0.12), transparent 42%),
+      linear-gradient(180deg, #f3f7ff 0%, #eaf1fd 100%);
+    overflow: hidden;
+  }
+
+  .dc-login-shell {
+    display: grid;
+    grid-template-columns: 1fr 1.05fr;
+    max-width: 1020px;
+    margin: 0 auto;
+    background: #fff;
+    border-radius: 28px;
+    overflow: hidden;
+    box-shadow: 0 30px 70px -20px rgba(11, 42, 111, 0.35), 0 8px 24px rgba(11, 42, 111, 0.08);
+    animation: dcLoginRise 0.7s ease both;
+  }
+
+  /* ---------- Panneau gauche ---------- */
+  .dc-login-side {
+    position: relative;
+    padding: 44px 38px;
+    color: #fff;
+    background: linear-gradient(160deg, var(--dc-blue-dark) 0%, var(--dc-blue-mid) 58%, var(--dc-blue-light) 100%);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 100%;
+    overflow: hidden;
+  }
+  .dc-login-side::before,
+  .dc-login-side::after {
+    content: "";
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.08);
+    pointer-events: none;
+  }
+  .dc-login-side::before { width: 320px; height: 320px; top: -120px; right: -110px; }
+  .dc-login-side::after  { width: 240px; height: 240px; bottom: -90px; left: -80px; background: rgba(255, 255, 255, 0.06); }
+
+  .dc-login-brand { position: relative; z-index: 2; }
+  .dc-login-logo {
+    width: 58px; height: 58px;
+    display: inline-flex; align-items: center; justify-content: center;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.16);
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    backdrop-filter: blur(6px);
+    font-size: 1.9rem;
+    margin-bottom: 18px;
+  }
+  .dc-login-brand h1 {
+    font-family: "Montserrat", sans-serif;
+    font-weight: 800;
+    font-size: 2rem;
+    line-height: 1.15;
+    margin: 0 0 8px;
+    color: #fff;
+  }
+  .dc-login-brand h1 span { color: #bfe0ff; }
+  .dc-login-brand p {
+    margin: 0;
+    font-size: 1rem;
+    color: rgba(255, 255, 255, 0.82);
+  }
+
+  .dc-login-art {
+    position: relative;
+    z-index: 2;
+    margin-top: 18px;
+    display: flex;
+    justify-content: center;
+  }
+  .dc-login-art svg { width: 100%; max-width: 360px; height: auto; overflow: visible; }
+
+  .dc-float-a { animation: dcFloat 5s ease-in-out infinite; }
+  .dc-float-b { animation: dcFloat 6.5s ease-in-out infinite reverse; }
+  .dc-pulse-line {
+    stroke-dasharray: 340;
+    stroke-dashoffset: 340;
+    animation: dcDraw 3.2s ease-in-out infinite;
+  }
+
+  /* ---------- Panneau droit ---------- */
+  .dc-login-main { padding: 44px 44px 34px; background: #fff; }
+
+  .dc-login-main .dc-login-title {
+    font-family: "Montserrat", sans-serif;
+    font-weight: 800;
+    font-size: 1.7rem;
+    color: var(--dc-ink);
+    margin: 0 0 20px;
+  }
+
+  .dc-login-alert {
+    display: flex; align-items: center; gap: 10px;
+    padding: 12px 14px;
+    margin-bottom: 18px;
+    border-radius: 12px;
+    background: #fff1f1;
+    border: 1px solid #ffd0d0;
+    color: #b42323;
+    font-size: 0.88rem;
+  }
+  .dc-login-alert i { font-size: 1.15rem; }
+
+  /* Comptes démo */
+  .dc-demo-box {
+    background: linear-gradient(180deg, #f5f8ff, #eef3fd);
+    border: 1px solid var(--dc-line);
+    border-radius: 18px;
+    padding: 16px;
+    margin-bottom: 26px;
+  }
+  .dc-demo-label {
+    display: block;
+    margin-bottom: 12px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--dc-muted);
+  }
+  .dc-demo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  .dc-demo-card {
+    background: #fff;
+    border: 1px solid var(--dc-line);
+    border-radius: 14px;
+    padding: 14px;
+    display: flex; flex-direction: column; justify-content: space-between;
+    gap: 12px;
+    transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+  }
+  .dc-demo-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 14px 28px -12px rgba(21, 88, 214, 0.35);
+    border-color: #bcd3fb;
+  }
+  .dc-demo-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .dc-demo-ico {
+    width: 36px; height: 36px; border-radius: 10px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 1.05rem;
+  }
+  .dc-demo-ico.doctor { background: #e5efff; color: var(--dc-blue); }
+  .dc-demo-ico.reception { background: #eceff4; color: #5b6b82; }
+  .dc-demo-head strong { font-size: 0.98rem; color: var(--dc-ink); }
+
+  .dc-demo-access {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 0.74rem;
+    font-weight: 600;
+  }
+  .dc-demo-access.doctor { background: #e5efff; color: var(--dc-blue); }
+  .dc-demo-access.reception { background: #eceff4; color: #4d5c72; }
+
+  .dc-btn-fill {
+    width: 100%;
+    padding: 8px 10px;
+    border-radius: 10px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    background: transparent;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .dc-btn-fill.doctor { border: 1.5px solid var(--dc-blue); color: var(--dc-blue); }
+  .dc-btn-fill.doctor:hover { background: var(--dc-blue); color: #fff; }
+  .dc-btn-fill.reception { border: 1.5px solid #8493a8; color: #4d5c72; }
+  .dc-btn-fill.reception:hover { background: #4d5c72; color: #fff; }
+
+  /* Formulaire */
+  .dc-field { margin-bottom: 20px; }
+  .dc-field label {
+    display: block;
+    margin-bottom: 7px;
+    font-size: 0.86rem;
+    font-weight: 600;
+    color: var(--dc-ink);
+  }
+  .dc-input-wrap {
+    display: flex; align-items: center;
+    background: #f4f7fc;
+    border: 1.5px solid transparent;
+    border-radius: 14px;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+  }
+  .dc-input-wrap:focus-within {
+    background: #fff;
+    border-color: var(--dc-blue);
+    box-shadow: 0 0 0 4px rgba(26, 95, 216, 0.12);
+  }
+  .dc-input-wrap i {
+    padding: 0 6px 0 16px;
+    font-size: 1.1rem;
+    color: #8a98ad;
+  }
+  .dc-input-wrap:focus-within i { color: var(--dc-blue); }
+  .dc-input-wrap input {
+    flex: 1;
+    min-width: 0;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    padding: 14px 16px 14px 8px;
+    font-size: 0.96rem;
+    color: var(--dc-ink);
+  }
+  .dc-input-wrap input::placeholder { color: #a3afc0; }
+  /* Évite le fond bleu d'autofill du navigateur */
+  .dc-input-wrap input:-webkit-autofill {
+    -webkit-box-shadow: 0 0 0 40px #f4f7fc inset;
+    -webkit-text-fill-color: var(--dc-ink);
+  }
+
+  .dc-btn-submit {
+    width: 100%;
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 14px;
+    border: 0;
+    border-radius: 14px;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #fff;
+    cursor: pointer;
+    background: linear-gradient(135deg, var(--dc-blue-mid), var(--dc-blue-light));
+    box-shadow: 0 14px 26px -10px rgba(21, 88, 214, 0.65);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+  }
+  .dc-btn-submit:hover { transform: translateY(-2px); filter: brightness(1.05); box-shadow: 0 18px 30px -10px rgba(21, 88, 214, 0.75); }
+  .dc-btn-submit:active { transform: translateY(0); }
+
+  .dc-login-foot {
+    margin-top: 26px;
+    padding-top: 18px;
+    border-top: 1px solid var(--dc-line);
+    text-align: center;
+    font-size: 0.78rem;
+    color: var(--dc-muted);
+  }
+
+  /* ---------- Animations ---------- */
+  @keyframes dcLoginRise { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes dcFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-9px); } }
+  @keyframes dcDraw { 0% { stroke-dashoffset: 340; } 55%, 100% { stroke-dashoffset: 0; } }
+
+  @media (prefers-reduced-motion: reduce) {
+    .dc-login-shell, .dc-float-a, .dc-float-b, .dc-pulse-line { animation: none !important; }
+    .dc-pulse-line { stroke-dashoffset: 0; }
+  }
+
+  /* ---------- Responsive ---------- */
+  @media (max-width: 991.98px) {
+    .dc-login-shell { grid-template-columns: 1fr; max-width: 560px; }
+    .dc-login-side { padding: 32px 28px; }
+    .dc-login-art { display: none; }
+    .dc-login-main { padding: 32px 28px 28px; }
+  }
+  @media (max-width: 575.98px) {
+    .dc-login-section { padding: 24px 0 40px; }
+    .dc-login-shell { border-radius: 22px; }
+    .dc-demo-grid { grid-template-columns: 1fr; }
+    .dc-login-main { padding: 26px 20px 22px; }
+    .dc-login-brand h1 { font-size: 1.6rem; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="dc-login-section">
+  <div class="container">
+    <div class="dc-login-shell">
+
+      <!-- ========== Panneau gauche : identité + illustration ========== -->
+      <aside class="dc-login-side">
+        <div class="dc-login-brand">
+          <div class="dc-login-logo"><i class="bi bi-hospital"></i></div>
+          <h1>DiaCare <span>Analytics</span></h1>
+          <p>Hospital Staff Decision Support</p>
+        </div>
+
+        <div class="dc-login-art" aria-hidden="true">
+          <svg viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">
+            <!-- Socle -->
+            <ellipse cx="200" cy="268" rx="150" ry="22" fill="rgba(255,255,255,0.14)"/>
+            <ellipse cx="200" cy="262" rx="112" ry="15" fill="rgba(255,255,255,0.18)"/>
+
+            <!-- Bâtiment hôpital -->
+            <g class="dc-float-a">
+              <rect x="138" y="86" width="124" height="170" rx="12" fill="#ffffff"/>
+              <rect x="108" y="150" width="42" height="106" rx="8" fill="#e4efff"/>
+              <rect x="250" y="150" width="42" height="106" rx="8" fill="#e4efff"/>
+              <!-- Croix -->
+              <rect x="186" y="104" width="28" height="28" rx="7" fill="#1558d6"/>
+              <rect x="196" y="109" width="8" height="18" rx="2" fill="#fff"/>
+              <rect x="191" y="114" width="18" height="8" rx="2" fill="#fff"/>
+              <!-- Fenêtres -->
+              <g fill="#cfe1ff">
+                <rect x="154" y="146" width="22" height="18" rx="4"/>
+                <rect x="189" y="146" width="22" height="18" rx="4"/>
+                <rect x="224" y="146" width="22" height="18" rx="4"/>
+                <rect x="154" y="178" width="22" height="18" rx="4"/>
+                <rect x="189" y="178" width="22" height="18" rx="4"/>
+                <rect x="224" y="178" width="22" height="18" rx="4"/>
+                <rect x="116" y="168" width="10" height="14" rx="3"/>
+                <rect x="132" y="168" width="10" height="14" rx="3"/>
+                <rect x="258" y="168" width="10" height="14" rx="3"/>
+                <rect x="274" y="168" width="10" height="14" rx="3"/>
+              </g>
+              <!-- Porte -->
+              <rect x="184" y="216" width="32" height="40" rx="8" fill="#1558d6"/>
+              <rect x="199" y="216" width="2" height="40" fill="#cfe1ff"/>
+            </g>
+
+            <!-- Carte ECG flottante -->
+            <g class="dc-float-b">
+              <rect x="248" y="40" width="130" height="74" rx="14" fill="#ffffff"/>
+              <circle cx="270" cy="62" r="7" fill="#e5efff"/>
+              <rect x="283" y="57" width="52" height="6" rx="3" fill="#dbe6f7"/>
+              <polyline class="dc-pulse-line" points="260,92 285,92 296,74 308,106 320,82 330,92 366,92"
+                        fill="none" stroke="#1558d6" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+            </g>
+
+            <!-- Pastille de validation -->
+            <g class="dc-float-b">
+              <circle cx="66" cy="96" r="30" fill="#ffffff"/>
+              <circle cx="66" cy="96" r="22" fill="#e5efff"/>
+              <path d="M55 96 l8 8 l15 -16" fill="none" stroke="#1558d6" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </g>
+
+            <!-- Mini graphique -->
+            <g class="dc-float-a">
+              <rect x="22" y="170" width="84" height="62" rx="12" fill="#ffffff"/>
+              <rect x="36" y="200" width="10" height="20" rx="3" fill="#bcd3fb"/>
+              <rect x="53" y="188" width="10" height="32" rx="3" fill="#6ea5f5"/>
+              <rect x="70" y="180" width="10" height="40" rx="3" fill="#1558d6"/>
+              <rect x="87" y="194" width="10" height="26" rx="3" fill="#9cc0f8"/>
+            </g>
+
+            <!-- Étoiles décoratives -->
+            <g fill="rgba(255,255,255,0.7)">
+              <circle cx="40" cy="40" r="3"/>
+              <circle cx="360" cy="170" r="3.5"/>
+              <circle cx="330" cy="236" r="2.5"/>
+              <circle cx="150" cy="40" r="2.5"/>
+            </g>
+          </svg>
+        </div>
+      </aside>
+
+      <!-- ========== Panneau droit : formulaire ========== -->
+      <div class="dc-login-main">
+        <h2 class="dc-login-title">Sign In</h2>
+
+        {% if error %}
+          <div class="dc-login-alert" role="alert">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+            <div>{{ error }}</div>
+          </div>
+        {% endif %}
+
+        <!-- Demo Accounts Box -->
+        <div class="dc-demo-box">
+          <span class="dc-demo-label">Demo Staff Accounts</span>
+
+          <div class="dc-demo-grid">
+            <!-- Doctor Demo Card -->
+            <div class="dc-demo-card">
+              <div>
+                <div class="dc-demo-head">
+                  <span class="dc-demo-ico doctor"><i class="bi bi-person-fill-check"></i></span>
+                  <strong>Doctor</strong>
+                </div>
+                <span class="dc-demo-access doctor"><i class="bi bi-unlock-fill"></i>Full Access</span>
+              </div>
+              <button type="button" class="dc-btn-fill doctor" onclick="fillCredentials('doctor@diacare.hospital', 'doctor123')">
+                Fill Doctor
+              </button>
+            </div>
+
+            <!-- Reception Demo Card -->
+            <div class="dc-demo-card">
+              <div>
+                <div class="dc-demo-head">
+                  <span class="dc-demo-ico reception"><i class="bi bi-person-badge"></i></span>
+                  <strong>Reception</strong>
+                </div>
+                <span class="dc-demo-access reception"><i class="bi bi-shield-lock"></i>Admission &amp; Planning</span>
+              </div>
+              <button type="button" class="dc-btn-fill reception" onclick="fillCredentials('reception@diacare.hospital', 'reception123')">
+                Fill Reception
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Login Form -->
+        <form method="post" action="{{ url_for('auth.login', next=request.args.get('next')) }}">
+          <div class="dc-field">
+            <label for="email">Hospital Email</label>
+            <div class="dc-input-wrap">
+              <i class="bi bi-envelope"></i>
+              <input type="email" id="email" name="email" placeholder="name@diacare.hospital" required autofocus>
+            </div>
+          </div>
+
+          <div class="dc-field" style="margin-bottom: 26px;">
+            <label for="password">Password</label>
+            <div class="dc-input-wrap">
+              <i class="bi bi-key"></i>
+              <input type="password" id="password" name="password" placeholder="Enter password" required>
+            </div>
+          </div>
+
+          <button type="submit" class="dc-btn-submit">
+            <i class="bi bi-box-arrow-in-right"></i> Sign In
+          </button>
+        </form>
+
+        <div class="dc-login-foot">
+          DiaCare Analytics is an internal decision support platform. No external network calls.
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function fillCredentials(email, pwd) {
+  document.getElementById('email').value = email;
+  document.getElementById('password').value = pwd;
+}
+</script>
+{% endblock %}

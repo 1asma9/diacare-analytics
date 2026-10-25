@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% block title %}Discharge destination — DiaCare Discharge{% endblock %}
+
+{# ── reusable field macros ── #}
+{% macro num(id, label, hint, min, max) %}
+<div class="field">
+  <label for="{{ id }}">{{ label }} <span class="hint">{{ hint }}</span></label>
+  <div class="row">
+    <input type="number" id="{{ id }}" name="{{ id }}"
+           min="{{ min }}" max="{{ max }}" value="{{ d[id] }}"
+           inputmode="numeric" required>
+  </div>
+</div>
+{% endmacro %}
+
+{% macro sel(id, label, opts, hint='') %}
+<div class="field">
+  <label for="{{ id }}">{{ label }} <span class="hint">{{ hint }}</span></label>
+  <select id="{{ id }}" name="{{ id }}">
+    {% for v, t in opts %}
+    <option value="{{ v }}" {{ 'selected' if d[id]|string == v|string }}>{{ t }}</option>
+    {% endfor %}
+  </select>
+</div>
+{% endmacro %}
+
+{% macro sel_plain(id, label, opts, hint='') %}
+<div class="field">
+  <label for="{{ id }}">{{ label }} <span class="hint">{{ hint }}</span></label>
+  <select id="{{ id }}" name="{{ id }}">
+    {% for v in opts %}
+    <option value="{{ v }}" {{ 'selected' if d[id] == v }}>{{ v }}</option>
+    {% endfor %}
+  </select>
+</div>
+{% endmacro %}
+
+{% block body %}
+<h1>Where will this patient be discharged?</h1>
+<p class="lead">Fill in what is known at admission or during the stay. The model predicts the most likely discharge destination and flags patients who may need a transfer — so the care team can start organising early.</p>
+
+<div class="btns" style="margin-bottom:16px">
+  <span class="muted small">Try an example:</span>
+  <button type="button" class="chip" data-example='{{ examples.home|tojson|forceescape }}'>Likely home</button>
+  <button type="button" class="chip" data-example='{{ examples.transfer|tojson|forceescape }}'>Likely transfer</button>
+</div>
+
+{% if errors %}
+<div class="err" role="alert">
+  <b>Please check:</b>
+  <ul>{% for e in errors %}<li>{{ e }}</li>{% endfor %}</ul>
+</div>
+{% endif %}
+
+<form id="form" method="post" action="/predict">
+
+  {# ── 1. Patient & admission ── #}
+  <div class="card">
+    <h2>1. Patient &amp; admission</h2>
+    <div class="grid g3">
+      {{ num('age', 'Age', 'years', limits.age[0], limits.age[1]) }}
+      {{ sel_plain('gender', 'Gender', genders) }}
+      {{ sel_plain('race', 'Race / ethnicity', races) }}
+    </div>
+    <div class="grid g2" style="margin-top:10px">
+      {{ sel('admission_type_id',  'Admission type',   adm_types) }}
+      {{ sel('admission_source_id','Admission source', adm_srcs) }}
+      {{ sel_plain('payer_code',      'Insurance',       payers) }}
+      {{ sel_plain('medical_specialty','Medical specialty', specialties) }}
+    </div>
+  </div>
+
+  {# ── 2. The stay ── #}
+  <div class="card">
+    <h2>2. The stay</h2>
+    <div class="grid g3">
+      {{ num('time_in_hospital',   'Length of stay',    'days',  limits.time_in_hospital[0],   limits.time_in_hospital[1])   }}
+      {{ num('num_lab_procedures', 'Lab procedures',    'count', limits.num_lab_procedures[0], limits.num_lab_procedures[1]) }}
+      {{ num('num_procedures',     'Procedures',        'count', limits.num_procedures[0],     limits.num_procedures[1])     }}
+      {{ num('num_medications',    'Medications',       'all drugs', limits.num_medications[0],limits.num_medications[1])    }}
+      {{ num('number_diagnoses',   'No. of diagnoses',  '',      limits.number_diagnoses[0],   limits.number_diagnoses[1])   }}
+      {{ num('sejours_anterieurs', 'Prior stays (this patient)', '0 = first visit',
+             limits.sejours_anterieurs[0], limits.sejours_anterieurs[1]) }}
+    </div>
+  </div>
+
+  {# ── 3. Diagnoses ── #}
+  <div class="card">
+    <h2>3. Diagnoses</h2>
+    <p class="muted small">Enter ICD-9 codes (e.g. 428, 250.01). Leave secondary codes blank if unknown.</p>
+    <div class="grid g3">
+      <div class="field">
+        <label for="diag_1">Main diagnosis (ICD-9)</label>
+        <input type="text" id="diag_1" name="diag_1" value="{{ d.diag_1 }}" placeholder="e.g. 428">
+      </div>
+      <div class="field">
+        <label for="diag_2">Secondary diagnosis 2 <span class="hint">or NA</span></label>
+        <input type="text" id="diag_2" name="diag_2" value="{{ d.diag_2 }}" placeholder="e.g. 250">
+      </div>
+      <div class="field">
+        <label for="diag_3">Secondary diagnosis 3 <span class="hint">or NA</span></label>
+        <input type="text" id="diag_3" name="diag_3" value="{{ d.diag_3 }}" placeholder="NA">
+      </div>
+    </div>
+  </div>
+
+  {# ── 4. History & lab results ── #}
+  <div class="card">
+    <h2>4. History &amp; lab results</h2>
+    <div class="grid g3">
+      {{ num('number_inpatient',  'Inpatient stays',        'past year', limits.number_inpatient[0],  limits.number_inpatient[1])  }}
+      {{ num('number_emergency',  'Emergency visits',       'past year', limits.number_emergency[0],  limits.number_emergency[1])  }}
+      {{ num('number_outpatient', 'Outpatient visits',      'past year', limits.number_outpatient[0], limits.number_outpatient[1]) }}
+    </div>
+    <div class="grid g2" style="margin-top:10px">
+      {{ sel_plain('max_glu_serum', 'Max glucose serum', glu_opts, 'None = not measured') }}
+      {{ sel_plain('A1Cresult',     'HbA1c result',      a1c_opts, 'None = not measured') }}
+    </div>
+  </div>
+
+  {# ── 5. Treatment ── #}
+  <div class="card">
+    <h2>5. Treatment</h2>
+    <div class="grid g2">
+      {{ sel_plain('insulin',    'Insulin',   insulins,   'No / steady dose / increased / decreased') }}
+      {{ sel_plain('metformin',  'Metformin', metformins, 'No / steady dose / increased / decreased') }}
+      {{ sel('change',      'Medication changed during stay', change_opts) }}
+      {{ sel('diabetesMed', 'Diabetes medication prescribed',
+             [('Yes','Yes'),('No','No')], '') }}
+    </div>
+  </div>
+
+  <div class="btns">
+    <button class="btn" id="go" type="submit">Predict discharge</button>
+    <a class="btn ghost" href="/">Reset</a>
+  </div>
+</form>
+{% endblock %}
